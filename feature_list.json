@@ -1,50 +1,68 @@
 [
-  {
-    "id": "onboarding-first-plant",
-    "title": "Onboarding y añadir la primera planta",
-    "status": "pending",
-    "platforms": ["ios", "android"],
-    "priority": 1,
-    "spec": "features/01-onboarding-first-plant.feature"
-  },
-  {
-    "id": "plant-list",
-    "title": "Lista de mis plantas con estado de riego",
-    "status": "pending",
-    "platforms": ["ios", "android"],
-    "priority": 2,
-    "spec": "features/02-plant-list.feature"
-  },
-  {
-    "id": "plant-detail",
-    "title": "Detalle de planta + marcar como regada",
-    "status": "pending",
-    "platforms": ["ios", "android"],
-    "priority": 3,
-    "spec": "features/03-plant-detail.feature"
-  },
-  {
-    "id": "watering-reminders",
-    "title": "Recordatorios locales de riego",
-    "status": "pending",
-    "platforms": ["ios", "android"],
-    "priority": 4,
-    "spec": "features/04-watering-reminders.feature"
-  },
-  {
-    "id": "add-plant-photo",
-    "title": "Añadir planta con foto (cámara o galería)",
-    "status": "pending",
-    "platforms": ["ios", "android"],
-    "priority": 5,
-    "spec": "features/05-add-plant-photo.feature"
-  },
-  {
-    "id": "plant-photo-history",
-    "title": "Historial visual de fotos de la planta",
-    "status": "pending",
-    "platforms": ["ios", "android"],
-    "priority": 6,
-    "spec": "features/06-plant-photo-history.feature"
-  }
+    {
+        "id": "onboarding-first-plant",
+        "title": "Onboarding y añadir la primera planta",
+        "status": "in_progress",
+        "platforms": [
+            "ios",
+            "android"
+        ],
+        "priority": 1,
+        "spec": "features/01-onboarding-first-plant.feature"
+    },
+    {
+        "id": "plant-list",
+        "title": "Lista de mis plantas con estado de riego",
+        "status": "pending",
+        "platforms": [
+            "ios",
+            "android"
+        ],
+        "priority": 2,
+        "spec": "features/02-plant-list.feature"
+    },
+    {
+        "id": "plant-detail",
+        "title": "Detalle de planta + marcar como regada",
+        "status": "pending",
+        "platforms": [
+            "ios",
+            "android"
+        ],
+        "priority": 3,
+        "spec": "features/03-plant-detail.feature"
+    },
+    {
+        "id": "watering-reminders",
+        "title": "Recordatorios locales de riego",
+        "status": "pending",
+        "platforms": [
+            "ios",
+            "android"
+        ],
+        "priority": 4,
+        "spec": "features/04-watering-reminders.feature"
+    },
+    {
+        "id": "add-plant-photo",
+        "title": "Añadir planta con foto (cámara o galería)",
+        "status": "pending",
+        "platforms": [
+            "ios",
+            "android"
+        ],
+        "priority": 5,
+        "spec": "features/05-add-plant-photo.feature"
+    },
+    {
+        "id": "plant-photo-history",
+        "title": "Historial visual de fotos de la planta",
+        "status": "pending",
+        "platforms": [
+            "ios",
+            "android"
+        ],
+        "priority": 6,
+        "spec": "features/06-plant-photo-history.feature"
+    }
 ]

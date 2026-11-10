@@ -1,15 +1,19 @@
 # Progress — Leafly
 
 ## Estado actual
-Proyecto recién inicializado. Ninguna feature implementada todavía.
+Harness completamente montado y verificado con `./init.sh`.
+Ninguna feature implementada todavía.
 
 ## Feature actual
-Ninguna.
+`onboarding-first-plant` (vamos a empezar ahora)
 
 ## Próximo paso
-Empezar con la feature de prioridad 1: `onboarding-first-plant`.
+1. Marcar la feature como `in_progress` en `feature_list.json`
+2. Leer la spec completa: `features/01-onboarding-first-plant.feature`
+3. Empezar implementación en iOS
 
 ## Notas
-- Estructura del harness creada.
-- Arquitectura y design system documentados.
-- Listo para la primera implementación dual.
+- Estructura dual lista
+- Design system definido
+- Arquitectura definida
+- 6 features pendientes
