@@ -26,6 +26,7 @@ class MainActivity : ComponentActivity() {
                 LeaflyRoot(
                     observePlants = container.observePlants,
                     addPlant = container.addPlant,
+                    markPlantWatered = container.markPlantWatered,
                 )
             }
         }

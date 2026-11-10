@@ -4,6 +4,7 @@ import com.raulferrergarcia.leafly.data.local.PlantDao
 import com.raulferrergarcia.leafly.data.local.toDomain
 import com.raulferrergarcia.leafly.data.local.toEntity
 import com.raulferrergarcia.leafly.domain.model.Plant
+import com.raulferrergarcia.leafly.domain.repository.PlantNotFoundException
 import com.raulferrergarcia.leafly.domain.repository.PlantRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -20,5 +21,12 @@ class RoomPlantRepository(
 
     override suspend fun add(plant: Plant) {
         plantDao.insert(plant.toEntity())
+    }
+
+    override suspend fun update(plant: Plant) {
+        val updatedRows = plantDao.update(plant.toEntity())
+        if (updatedRows == 0) {
+            throw PlantNotFoundException(plant.id)
+        }
     }
 }

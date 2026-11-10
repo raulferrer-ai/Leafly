@@ -8,11 +8,14 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import com.raulferrergarcia.leafly.designsystem.LeaflyTheme
 import com.raulferrergarcia.leafly.domain.model.Plant
+import com.raulferrergarcia.leafly.domain.repository.PlantNotFoundException
 import com.raulferrergarcia.leafly.domain.repository.PlantRepository
 import com.raulferrergarcia.leafly.domain.usecase.AddPlantUseCase
+import com.raulferrergarcia.leafly.domain.usecase.MarkPlantWateredUseCase
 import com.raulferrergarcia.leafly.domain.usecase.ObservePlantsUseCase
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.update
 import org.junit.Rule
 import org.junit.Test
 
@@ -56,8 +59,30 @@ class PlantsScreenTest {
         composeRule.onNodeWithText("Monstera").performClick()
 
         composeRule.onNodeWithText("TU PLANTA").assertIsDisplayed()
-        composeRule.onNodeWithText("Muy pronto").assertIsDisplayed()
+        composeRule.onNodeWithText("Añadida hoy").assertIsDisplayed()
+        composeRule.onNodeWithText("Ya la regué").assertIsDisplayed()
         composeRule.onNodeWithContentDescription("Volver a mis plantas").assertIsDisplayed()
+    }
+
+    @Test
+    fun markingAsWateredUpdatesDetailAndList() {
+        val repository = FakePlantRepository(
+            listOf(Plant(name = "Monstera")),
+        )
+
+        setPlantsContent(repository)
+
+        composeRule.onNodeWithText("Monstera").performClick()
+        composeRule.onNodeWithText("Ya la regué").performClick()
+
+        composeRule.onNodeWithText("Regada hoy").assertIsDisplayed()
+        composeRule.onNodeWithText("Al día").assertIsDisplayed()
+
+        composeRule.onNodeWithContentDescription("Volver a mis plantas").performClick()
+
+        composeRule.onNodeWithText("Mis plantas").assertIsDisplayed()
+        composeRule.onNodeWithText("Regada hoy").assertIsDisplayed()
+        composeRule.onNodeWithText("Al día").assertIsDisplayed()
     }
 
     @Test
@@ -80,6 +105,7 @@ class PlantsScreenTest {
                 PlantsScreen(
                     observePlants = ObservePlantsUseCase(repository),
                     addPlant = AddPlantUseCase(repository),
+                    markPlantWatered = MarkPlantWateredUseCase(repository),
                 )
             }
         }
@@ -95,6 +121,16 @@ private class FakePlantRepository(
     override fun observePlants(): Flow<List<Plant>> = plantsFlow
 
     override suspend fun add(plant: Plant) {
-        plantsFlow.value = plantsFlow.value + plant
+        plantsFlow.update { current -> current + plant }
+    }
+
+    override suspend fun update(plant: Plant) {
+        plantsFlow.update { current ->
+            val index = current.indexOfFirst { it.id == plant.id }
+            if (index < 0) {
+                throw PlantNotFoundException(plant.id)
+            }
+            current.toMutableList().apply { this[index] = plant }
+        }
     }
 }

@@ -3,6 +3,7 @@ package com.raulferrergarcia.leafly.features.root
 import app.cash.turbine.test
 import com.raulferrergarcia.leafly.domain.model.Plant
 import com.raulferrergarcia.leafly.domain.model.PlantType
+import com.raulferrergarcia.leafly.domain.repository.PlantNotFoundException
 import com.raulferrergarcia.leafly.domain.repository.PlantRepository
 import com.raulferrergarcia.leafly.domain.usecase.ObservePlantsUseCase
 import kotlinx.coroutines.Dispatchers
@@ -78,5 +79,15 @@ private class FakePlantRepository : PlantRepository {
 
     override suspend fun add(plant: Plant) {
         plantsFlow.update { current -> current + plant }
+    }
+
+    override suspend fun update(plant: Plant) {
+        plantsFlow.update { current ->
+            val index = current.indexOfFirst { it.id == plant.id }
+            if (index < 0) {
+                throw PlantNotFoundException(plant.id)
+            }
+            current.toMutableList().apply { this[index] = plant }
+        }
     }
 }

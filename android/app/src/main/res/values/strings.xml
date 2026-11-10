@@ -56,8 +56,8 @@
     <!-- Detalle de planta -->
     <string name="plant_detail_eyebrow">TU PLANTA</string>
     <string name="plant_detail_back">Volver a mis plantas</string>
-    <string name="plant_detail_coming_soon_title">Muy pronto</string>
-    <string name="plant_detail_coming_soon_body">Muy pronto podrás ver aquí todos sus cuidados.</string>
+    <string name="plant_detail_water_action">Ya la regué</string>
+    <string name="plant_detail_save_error">No hemos podido guardar el riego. Inténtalo de nuevo.</string>
 
     <!-- Añadir planta desde la lista -->
     <string name="add_plant_another_eyebrow">NUEVA PLANTA</string>

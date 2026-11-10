@@ -15,21 +15,25 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.rounded.AutoAwesome
+import androidx.compose.material.icons.rounded.Warning
+import androidx.compose.material.icons.rounded.WaterDrop
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.raulferrergarcia.leafly.R
 import com.raulferrergarcia.leafly.designsystem.LeaflyCard
 import com.raulferrergarcia.leafly.designsystem.LeaflyCircularIconButton
 import com.raulferrergarcia.leafly.designsystem.LeaflyColors
+import com.raulferrergarcia.leafly.designsystem.LeaflyPrimaryButton
 import com.raulferrergarcia.leafly.designsystem.LeaflyScreen
 import com.raulferrergarcia.leafly.designsystem.LeaflySpacing
 import com.raulferrergarcia.leafly.designsystem.LeaflyStatusBadge
@@ -43,15 +47,33 @@ import com.raulferrergarcia.leafly.domain.model.WateringStatus
 import com.raulferrergarcia.leafly.domain.model.wateringStatus
 
 /**
- * Pantalla de detalle provisional.
- * La feature de detalle completa llegará después con historial y riegos.
+ * Detalle de una planta: su información, su estado de riego y la acción
+ * principal para marcarla como regada.
  */
 @Composable
-fun PlantDetailPlaceholderScreen(
-    plant: Plant,
+fun PlantDetailScreen(
+    viewModel: PlantDetailViewModel,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    PlantDetailContent(
+        uiState = uiState,
+        onBack = onBack,
+        onWater = viewModel::markAsWatered,
+        modifier = modifier,
+    )
+}
+
+@Composable
+internal fun PlantDetailContent(
+    uiState: PlantDetailUiState,
+    onBack: () -> Unit,
+    onWater: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val plant = uiState.plant
     val status = plant.wateringStatus()
 
     LeaflyScreen(modifier = modifier) {
@@ -82,7 +104,17 @@ fun PlantDetailPlaceholderScreen(
 
                 StatusCard(plant = plant, status = status)
 
-                ComingSoonCard()
+                LeaflyPrimaryButton(
+                    text = stringResource(R.string.plant_detail_water_action),
+                    onClick = onWater,
+                    enabled = !uiState.isSaving,
+                    loading = uiState.isSaving,
+                    icon = Icons.Rounded.WaterDrop,
+                )
+
+                if (uiState.saveError != null) {
+                    ErrorCard()
+                }
             }
         }
     }
@@ -145,27 +177,19 @@ private fun StatusCard(
 }
 
 @Composable
-private fun ComingSoonCard() {
+private fun ErrorCard() {
     LeaflyCard {
-        Column(verticalArrangement = Arrangement.spacedBy(LeaflySpacing.sm)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    imageVector = Icons.Rounded.AutoAwesome,
-                    contentDescription = null,
-                    tint = LeaflyColors.TextPrimary,
-                    modifier = Modifier.size(18.dp),
-                )
-                Spacer(modifier = Modifier.width(LeaflySpacing.xs))
-                Text(
-                    text = stringResource(R.string.plant_detail_coming_soon_title),
-                    style = MaterialTheme.typography.headlineSmall,
-                    color = LeaflyColors.TextPrimary,
-                )
-            }
-
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                imageVector = Icons.Rounded.Warning,
+                contentDescription = null,
+                tint = LeaflyColors.NeedsWaterNow,
+                modifier = Modifier.size(18.dp),
+            )
+            Spacer(modifier = Modifier.width(LeaflySpacing.xs))
             Text(
-                text = stringResource(R.string.plant_detail_coming_soon_body),
-                style = MaterialTheme.typography.bodyLarge,
+                text = stringResource(R.string.plant_detail_save_error),
+                style = MaterialTheme.typography.bodyMedium,
                 color = LeaflyColors.TextSecondary,
             )
         }
@@ -174,11 +198,18 @@ private fun ComingSoonCard() {
 
 @Preview(showBackground = true, heightDp = 900)
 @Composable
-private fun PlantDetailPlaceholderPreview() {
+private fun PlantDetailPreview() {
     LeaflyTheme {
-        PlantDetailPlaceholderScreen(
-            plant = Plant(name = "Monstera", type = PlantType.MONSTERA),
+        PlantDetailContent(
+            uiState = PlantDetailUiState(
+                plant = Plant(
+                    name = "Monstera",
+                    type = PlantType.MONSTERA,
+                    lastWateredAt = System.currentTimeMillis() - 6L * 24 * 60 * 60 * 1000,
+                ),
+            ),
             onBack = {},
+            onWater = {},
         )
     }
 }

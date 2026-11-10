@@ -151,6 +151,9 @@ fun LeaflyCard(
 
 /**
  * Botón principal: pill verde, texto blanco y sombra suave.
+ *
+ * [icon] es opcional: se coloca a la izquierda del texto. Mientras [loading]
+ * está activo se muestra un indicador en su lugar.
  */
 @Composable
 fun LeaflyPrimaryButton(
@@ -159,6 +162,7 @@ fun LeaflyPrimaryButton(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     loading: Boolean = false,
+    icon: ImageVector? = null,
 ) {
     Button(
         onClick = onClick,
@@ -185,6 +189,14 @@ fun LeaflyPrimaryButton(
                 modifier = Modifier.size(20.dp),
                 color = LeaflyColors.OnPrimary,
                 strokeWidth = 2.dp,
+            )
+            Spacer(modifier = Modifier.width(LeaflySpacing.xs))
+        } else if (icon != null) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = LeaflyColors.OnPrimary,
+                modifier = Modifier.size(20.dp),
             )
             Spacer(modifier = Modifier.width(LeaflySpacing.xs))
         }

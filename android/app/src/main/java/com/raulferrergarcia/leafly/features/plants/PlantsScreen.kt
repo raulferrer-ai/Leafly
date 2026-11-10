@@ -66,6 +66,7 @@ import com.raulferrergarcia.leafly.domain.model.Plant
 import com.raulferrergarcia.leafly.domain.model.PlantType
 import com.raulferrergarcia.leafly.domain.model.wateringStatus
 import com.raulferrergarcia.leafly.domain.usecase.AddPlantUseCase
+import com.raulferrergarcia.leafly.domain.usecase.MarkPlantWateredUseCase
 import com.raulferrergarcia.leafly.domain.usecase.ObservePlantsUseCase
 import com.raulferrergarcia.leafly.features.onboarding.AddPlantMode
 import com.raulferrergarcia.leafly.features.onboarding.AddPlantScreen
@@ -74,12 +75,13 @@ import com.raulferrergarcia.leafly.features.onboarding.AddPlantViewModel
 /**
  * Jardín: lista de todas las plantas con su estado de riego.
  *
- * La navegación vive aquí: lista → añadir planta y lista → detalle provisional.
+ * La navegación vive aquí: lista → añadir planta y lista → detalle.
  */
 @Composable
 fun PlantsScreen(
     observePlants: ObservePlantsUseCase,
     addPlant: AddPlantUseCase,
+    markPlantWatered: MarkPlantWateredUseCase,
     modifier: Modifier = Modifier,
 ) {
     val plantsViewModel: PlantsViewModel = viewModel(
@@ -125,8 +127,16 @@ fun PlantsScreen(
             val plant = uiState.plants.firstOrNull { it.id == plantId }
 
             if (plant != null) {
-                PlantDetailPlaceholderScreen(
-                    plant = plant,
+                val detailViewModel: PlantDetailViewModel = viewModel(
+                    key = plant.id,
+                    factory = PlantDetailViewModel.factory(
+                        plant = plant,
+                        markPlantWatered = markPlantWatered,
+                    ),
+                )
+
+                PlantDetailScreen(
+                    viewModel = detailViewModel,
                     onBack = { navController.popBackStack() },
                 )
             } else {

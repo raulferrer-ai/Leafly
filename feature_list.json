@@ -24,7 +24,7 @@
     {
         "id": "plant-detail",
         "title": "Detalle de planta + marcar como regada",
-        "status": "in_progress",
+        "status": "done",
         "platforms": [
             "ios",
             "android"
