@@ -7,7 +7,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
     entities = [PlantEntity::class],
-    version = 2,
+    version = 3,
     exportSchema = false,
 )
 abstract class LeaflyDatabase : RoomDatabase() {
@@ -20,6 +20,15 @@ abstract class LeaflyDatabase : RoomDatabase() {
         val MIGRATION_1_2 = object : Migration(1, 2) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE plants ADD COLUMN lastWateredAt INTEGER")
+            }
+        }
+
+        /**
+         * Añade la foto opcional de la planta sin perder las plantas existentes.
+         */
+        val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE plants ADD COLUMN photoData BLOB")
             }
         }
     }

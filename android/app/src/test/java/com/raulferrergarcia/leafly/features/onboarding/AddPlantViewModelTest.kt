@@ -99,6 +99,120 @@ class AddPlantViewModelTest {
     }
 
     @Test
+    fun `a plant can be saved without a photo`() = runTest(dispatcher) {
+        val repository = FakePlantRepository()
+        val viewModel = createViewModel(repository)
+
+        viewModel.onNameChange("Monstera")
+        viewModel.save()
+
+        assertTrue(viewModel.uiState.value.isSaved)
+        assertNull(repository.plants.single().photoData)
+    }
+
+    @Test
+    fun `saving keeps the chosen photo`() = runTest(dispatcher) {
+        val repository = FakePlantRepository()
+        val viewModel = createViewModel(repository)
+        val photo = byteArrayOf(1, 2, 3)
+
+        viewModel.onNameChange("Monstera")
+        viewModel.applyPhoto(photo)
+        viewModel.save()
+
+        val saved = repository.plants.single()
+        assertTrue(photo.contentEquals(saved.photoData))
+    }
+
+    @Test
+    fun `removing the photo saves the plant without image`() = runTest(dispatcher) {
+        val repository = FakePlantRepository()
+        val viewModel = createViewModel(repository)
+
+        viewModel.onNameChange("Ficus")
+        viewModel.applyPhoto(byteArrayOf(9, 9))
+        viewModel.removePhoto()
+        viewModel.save()
+
+        assertTrue(viewModel.uiState.value.isSaved)
+        assertNull(repository.plants.single().photoData)
+    }
+
+    @Test
+    fun `applying a photo clears the processing state`() = runTest(dispatcher) {
+        val viewModel = createViewModel()
+        val photo = byteArrayOf(4, 5)
+
+        viewModel.startPhotoProcessing()
+        assertTrue(viewModel.uiState.value.isProcessingPhoto)
+
+        viewModel.applyPhoto(photo)
+
+        val state = viewModel.uiState.value
+        assertFalse(state.isProcessingPhoto)
+        assertNull(state.photoMessage)
+        assertTrue(photo.contentEquals(state.photoData))
+    }
+
+    @Test
+    fun `a photo failure shows a calm message and stops processing`() = runTest(dispatcher) {
+        val viewModel = createViewModel()
+
+        viewModel.startPhotoProcessing()
+        viewModel.failPhotoProcessing(AddPlantPhotoMessage.PhotoLoadFailed)
+
+        val state = viewModel.uiState.value
+        assertFalse(state.isProcessingPhoto)
+        assertEquals(AddPlantPhotoMessage.PhotoLoadFailed, state.photoMessage)
+    }
+
+    @Test
+    fun `a denied camera permission only shows a message and still allows saving`() =
+        runTest(dispatcher) {
+            val repository = FakePlantRepository()
+            val viewModel = createViewModel(repository)
+
+            viewModel.onNameChange("Ficus")
+            viewModel.showPhotoMessage(AddPlantPhotoMessage.CameraPermissionDenied)
+
+            assertEquals(
+                AddPlantPhotoMessage.CameraPermissionDenied,
+                viewModel.uiState.value.photoMessage,
+            )
+            assertFalse(viewModel.uiState.value.isProcessingPhoto)
+
+            viewModel.save()
+
+            assertTrue(viewModel.uiState.value.isSaved)
+            assertNull(repository.plants.single().photoData)
+        }
+
+    @Test
+    fun `saving while the photo is being processed does nothing`() = runTest(dispatcher) {
+        val repository = FakePlantRepository()
+        val viewModel = createViewModel(repository)
+
+        viewModel.onNameChange("Monstera")
+        viewModel.startPhotoProcessing()
+        viewModel.save()
+
+        val state = viewModel.uiState.value
+        assertFalse(state.isSaving)
+        assertFalse(state.isSaved)
+        assertTrue(repository.plants.isEmpty())
+    }
+
+    @Test
+    fun `reset clears the chosen photo`() = runTest(dispatcher) {
+        val viewModel = createViewModel()
+
+        viewModel.applyPhoto(byteArrayOf(7))
+        viewModel.reset()
+
+        assertNull(viewModel.uiState.value.photoData)
+    }
+
+    @Test
     fun `tapping the same type twice deselects it`() = runTest(dispatcher) {
         val viewModel = createViewModel()
 

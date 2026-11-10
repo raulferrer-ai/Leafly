@@ -43,6 +43,43 @@ class AddPlantViewModel(
         _uiState.update { state -> state.copy(selectedType = null) }
     }
 
+    /** La foto se está preparando (reducir, orientar y comprimir). */
+    fun startPhotoProcessing() {
+        _uiState.update { state ->
+            state.copy(isProcessingPhoto = true, photoMessage = null)
+        }
+    }
+
+    /** Guarda en memoria la foto ya procesada. Solo se persiste al guardar. */
+    fun applyPhoto(photoData: ByteArray) {
+        _uiState.update { state ->
+            state.copy(
+                photoData = photoData,
+                isProcessingPhoto = false,
+                photoMessage = null,
+            )
+        }
+    }
+
+    /** La foto no se pudo preparar: se avisa con calma y se sigue sin ella. */
+    fun failPhotoProcessing(message: AddPlantPhotoMessage) {
+        _uiState.update { state ->
+            state.copy(isProcessingPhoto = false, photoMessage = message)
+        }
+    }
+
+    /** Aviso calmado (por ejemplo, permiso de cámara denegado). */
+    fun showPhotoMessage(message: AddPlantPhotoMessage) {
+        _uiState.update { state -> state.copy(photoMessage = message) }
+    }
+
+    /** Quita la foto elegida; la planta se guardará sin imagen. */
+    fun removePhoto() {
+        _uiState.update { state ->
+            state.copy(photoData = null, photoMessage = null)
+        }
+    }
+
     /**
      * Deja la pantalla como recién abierta. Se usa al entrar y al cancelar,
      * para que cancelar no conserve ni guarde nada.
@@ -53,7 +90,7 @@ class AddPlantViewModel(
 
     fun save() {
         val current = _uiState.value
-        if (current.isSaving) return
+        if (current.isSaving || current.isProcessingPhoto) return
 
         val trimmedName = current.name.trim()
         if (trimmedName.isEmpty()) {
@@ -66,7 +103,11 @@ class AddPlantViewModel(
 
         viewModelScope.launch {
             try {
-                addPlant(name = trimmedName, type = current.selectedType)
+                addPlant(
+                    name = trimmedName,
+                    type = current.selectedType,
+                    photoData = current.photoData,
+                )
                 _uiState.update { state -> state.copy(isSaving = false, isSaved = true) }
             } catch (cancellation: CancellationException) {
                 throw cancellation

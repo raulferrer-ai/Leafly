@@ -46,7 +46,7 @@
     {
         "id": "add-plant-photo",
         "title": "Añadir planta con foto (cámara o galería)",
-        "status": "in_progress",
+        "status": "done",
         "platforms": [
             "ios",
             "android"

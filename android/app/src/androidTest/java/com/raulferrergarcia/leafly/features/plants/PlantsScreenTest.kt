@@ -6,6 +6,7 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import com.raulferrergarcia.leafly.designsystem.LeaflyTheme
 import com.raulferrergarcia.leafly.domain.model.Plant
 import com.raulferrergarcia.leafly.domain.repository.PlantNotFoundException
@@ -100,6 +101,23 @@ class PlantsScreenTest {
 
         composeRule.onNodeWithText("NUEVA PLANTA").assertIsDisplayed()
         composeRule.onNodeWithText("Añade una planta").assertIsDisplayed()
+    }
+
+    @Test
+    fun addPlantScreenOffersAnOptionalPhoto() {
+        val repository = FakePlantRepository(
+            listOf(Plant(name = "Monstera")),
+        )
+
+        setPlantsContent(repository)
+
+        composeRule.onNodeWithContentDescription("Añadir una planta").performClick()
+
+        composeRule.onNodeWithText("La foto de tu planta").assertIsDisplayed()
+        composeRule.onNodeWithText("Todavía sin foto").assertIsDisplayed()
+        composeRule.onNodeWithText("Elegir de la galería")
+            .performScrollTo()
+            .assertIsDisplayed()
     }
 
     private fun setPlantsContent(repository: FakePlantRepository) {

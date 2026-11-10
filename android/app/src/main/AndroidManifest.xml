@@ -5,6 +5,13 @@
     <!-- Android 13+ pide permiso en tiempo de ejecución para mostrar notificaciones. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
+    <!-- La cámara es opcional: si no hay cámara o se deniega el permiso, la app
+         sigue funcionando con la galería o sin foto. -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature
+        android:name="android.hardware.camera"
+        android:required="false" />
+
     <application
         android:name=".LeaflyApplication"
         android:allowBackup="true"
@@ -31,6 +38,18 @@
         <receiver
             android:name=".data.notifications.WateringReminderReceiver"
             android:exported="false" />
+
+        <!-- Comparte con la app de cámara el archivo temporal donde escribirá
+             la foto, sin exponer rutas internas de la app. -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
     </application>
 
 </manifest>

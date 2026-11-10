@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!-- Fotos temporales que la app de cámara escribe antes de procesarlas. -->
+    <cache-path
+        name="plant_photos"
+        path="plant_photos/" />
+</paths>

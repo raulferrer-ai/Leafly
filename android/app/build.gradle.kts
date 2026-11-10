@@ -57,6 +57,12 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation(libs.androidx.material.icons.extended)
     implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.core.ktx)
+
+    // ======================
+    // Fotos (orientación EXIF)
+    // ======================
+    implementation(libs.androidx.exifinterface)
 
     // ======================
     // Lifecycle + ViewModel (muy importante)

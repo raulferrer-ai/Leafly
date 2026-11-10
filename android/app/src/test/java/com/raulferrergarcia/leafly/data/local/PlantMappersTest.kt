@@ -4,6 +4,7 @@ import com.raulferrergarcia.leafly.domain.model.Plant
 import com.raulferrergarcia.leafly.domain.model.PlantType
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class PlantMappersTest {
@@ -108,5 +109,55 @@ class PlantMappersTest {
         )
 
         assertEquals(plant, plant.toEntity().toDomain())
+    }
+
+    @Test
+    fun `entity maps its photo to the domain`() {
+        val photo = byteArrayOf(1, 2, 3)
+        val entity = PlantEntity(
+            id = "planta-7",
+            name = "Con foto",
+            typeKey = null,
+            createdAt = 80,
+            photoData = photo,
+        )
+
+        assertTrue(photo.contentEquals(entity.toDomain().photoData))
+    }
+
+    @Test
+    fun `domain plant maps its photo to the entity`() {
+        val photo = byteArrayOf(4, 5)
+        val plant = Plant(
+            id = "planta-8",
+            name = "Con foto",
+            createdAt = 90,
+            photoData = photo,
+        )
+
+        assertTrue(photo.contentEquals(plant.toEntity().photoData))
+    }
+
+    @Test
+    fun `round trip keeps the photo`() {
+        val plant = Plant(
+            name = "Con foto",
+            createdAt = 100,
+            photoData = byteArrayOf(7, 8, 9),
+        )
+
+        assertEquals(plant, plant.toEntity().toDomain())
+    }
+
+    @Test
+    fun `entity without photo maps to a plant without photo`() {
+        val entity = PlantEntity(
+            id = "planta-9",
+            name = "Sin foto",
+            typeKey = null,
+            createdAt = 110,
+        )
+
+        assertNull(entity.toDomain().photoData)
     }
 }

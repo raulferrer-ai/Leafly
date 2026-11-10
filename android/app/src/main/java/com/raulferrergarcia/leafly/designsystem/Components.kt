@@ -206,6 +206,59 @@ fun LeaflyPrimaryButton(
 }
 
 /**
+ * Botón secundario y tranquilo: superficie suave, icono y texto.
+ *
+ * Se usa para acciones opcionales que no deben competir con el botón
+ * principal (por ejemplo, elegir una foto o quitarla).
+ */
+@Composable
+fun LeaflyQuietButton(
+    text: String,
+    icon: ImageVector,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    destructive: Boolean = false,
+) {
+    val contentColor = when {
+        !enabled -> LeaflyColors.TextTertiary
+        destructive -> LeaflyColors.NeedsWaterNow
+        else -> LeaflyColors.Secondary
+    }
+
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(48.dp)
+            .clip(RoundedCornerShape(LeaflyRadius.control))
+            .background(LeaflyColors.FieldSurface)
+            .clickable(
+                enabled = enabled,
+                role = Role.Button,
+                onClick = onClick,
+            )
+            .padding(horizontal = LeaflySpacing.md),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = contentColor,
+            modifier = Modifier.size(18.dp),
+        )
+        Spacer(modifier = Modifier.width(LeaflySpacing.xs))
+        Text(
+            text = text,
+            color = contentColor,
+            style = MaterialTheme.typography.labelMedium,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+    }
+}
+
+/**
  * Botón redondo para acciones discretas sobre el degradado (por ejemplo, cerrar).
  */
 @Composable
