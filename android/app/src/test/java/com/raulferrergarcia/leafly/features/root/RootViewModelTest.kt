@@ -16,7 +16,6 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 
@@ -64,9 +63,7 @@ class RootViewModelTest {
             repository.add(Plant(name = "Monstera", type = PlantType.MONSTERA))
 
             val gardenState = awaitItem()
-            assertTrue(gardenState is RootUiState.Plants)
-            val plants = (gardenState as RootUiState.Plants).plants
-            assertEquals(listOf("Monstera"), plants.map { it.name })
+            assertEquals(RootUiState.Plants, gardenState)
 
             cancelAndIgnoreRemainingEvents()
         }

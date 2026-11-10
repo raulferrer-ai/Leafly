@@ -13,7 +13,7 @@
     {
         "id": "plant-list",
         "title": "Lista de mis plantas con estado de riego",
-        "status": "in_progress",
+        "status": " done",
         "platforms": [
             "ios",
             "android"

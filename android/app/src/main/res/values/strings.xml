@@ -29,7 +29,39 @@
     <!-- Mis plantas -->
     <string name="plants_eyebrow">TU JARDÍN</string>
     <string name="plants_title">Mis plantas</string>
+    <string name="plants_subtitle_zero">Un lugar tranquilo para tus plantas.</string>
     <string name="plants_subtitle_one">Una planta a tu cuidado.</string>
     <string name="plants_subtitle_many">%1$d plantas a tu cuidado.</string>
+    <string name="plants_add_plant">Añadir una planta</string>
+    <string name="plants_open_plant">Abre el detalle de la planta</string>
     <string name="plant_added_on">Añadida el %1$s</string>
+    <string name="plants_added_today">Añadida hoy</string>
+    <string name="plants_added_yesterday">Añadida ayer</string>
+    <string name="plants_watered_today">Regada hoy</string>
+    <string name="plants_watered_yesterday">Regada ayer</string>
+    <string name="plants_watered_days_ago">Regada hace %1$d días</string>
+    <string name="plants_loading">Cargando tus plantas</string>
+    <string name="plants_error_title">No hemos podido cargar tus plantas</string>
+    <string name="plants_error_message">Inténtalo de nuevo en un momento.</string>
+    <string name="plants_retry">Reintentar</string>
+    <string name="plants_empty_title">Tu jardín está esperando</string>
+    <string name="plants_empty_subtitle">Añade una planta para empezar a cuidarla con calma.</string>
+    <string name="plants_empty_action">Añadir mi primera planta</string>
+
+    <!-- Estados de riego -->
+    <string name="watering_status_healthy">Al día</string>
+    <string name="watering_status_soon">Riega pronto</string>
+    <string name="watering_status_now">Necesita agua</string>
+
+    <!-- Detalle de planta -->
+    <string name="plant_detail_eyebrow">TU PLANTA</string>
+    <string name="plant_detail_back">Volver a mis plantas</string>
+    <string name="plant_detail_coming_soon_title">Muy pronto</string>
+    <string name="plant_detail_coming_soon_body">Muy pronto podrás ver aquí todos sus cuidados.</string>
+
+    <!-- Añadir planta desde la lista -->
+    <string name="add_plant_another_eyebrow">NUEVA PLANTA</string>
+    <string name="add_plant_another_title">Añade una planta</string>
+    <string name="add_plant_another_subtitle">Solo necesitas un nombre. Podrás completar el resto más adelante.</string>
+    <string name="add_plant_cancel_another">Cancelar y volver a mis plantas</string>
 </resources>

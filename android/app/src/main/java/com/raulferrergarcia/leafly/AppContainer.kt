@@ -19,7 +19,9 @@ class AppContainer(context: Context) {
         context.applicationContext,
         LeaflyDatabase::class.java,
         DATABASE_NAME,
-    ).build()
+    )
+        .addMigrations(LeaflyDatabase.MIGRATION_1_2)
+        .build()
 
     private val plantRepository: PlantRepository = RoomPlantRepository(database.plantDao())
 

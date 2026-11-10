@@ -20,7 +20,7 @@ import kotlinx.coroutines.flow.stateIn
 sealed interface RootUiState {
     data object Loading : RootUiState
     data object Onboarding : RootUiState
-    data class Plants(val plants: List<Plant>) : RootUiState
+    data object Plants : RootUiState
 }
 
 /**
@@ -32,7 +32,7 @@ class RootViewModel(
 
     val uiState: StateFlow<RootUiState> = observePlants()
         .map<List<Plant>, RootUiState> { plants ->
-            if (plants.isEmpty()) RootUiState.Onboarding else RootUiState.Plants(plants)
+            if (plants.isEmpty()) RootUiState.Onboarding else RootUiState.Plants
         }
         .stateIn(
             scope = viewModelScope,

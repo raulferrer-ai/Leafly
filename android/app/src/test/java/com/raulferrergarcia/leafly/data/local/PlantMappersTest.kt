@@ -72,4 +72,41 @@ class PlantMappersTest {
 
         assertEquals(plant, plant.toEntity().toDomain())
     }
+
+    @Test
+    fun `entity keeps the last watered date`() {
+        val entity = PlantEntity(
+            id = "planta-5",
+            name = "Regada",
+            typeKey = null,
+            createdAt = 50,
+            lastWateredAt = 1_800_000_000_000,
+        )
+
+        assertEquals(1_800_000_000_000, entity.toDomain().lastWateredAt)
+    }
+
+    @Test
+    fun `domain plant maps the last watered date`() {
+        val plant = Plant(
+            id = "planta-6",
+            name = "Regada",
+            createdAt = 60,
+            lastWateredAt = 1_900_000_000_000,
+        )
+
+        assertEquals(1_900_000_000_000, plant.toEntity().lastWateredAt)
+    }
+
+    @Test
+    fun `round trip keeps the last watered date`() {
+        val plant = Plant(
+            name = "Ficus",
+            type = PlantType.FICUS,
+            createdAt = 70,
+            lastWateredAt = 75,
+        )
+
+        assertEquals(plant, plant.toEntity().toDomain())
+    }
 }

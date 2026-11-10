@@ -15,4 +15,5 @@ data class PlantEntity(
     val name: String,
     val typeKey: String?,
     val createdAt: Long,
+    val lastWateredAt: Long? = null,
 )

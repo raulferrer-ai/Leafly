@@ -75,13 +75,15 @@ import com.raulferrergarcia.leafly.designsystem.icon
 import com.raulferrergarcia.leafly.domain.model.PlantType
 
 /**
- * Pantalla para añadir la primera planta.
+ * Pantalla para añadir una planta.
  */
 @Composable
 fun AddPlantScreen(
     viewModel: AddPlantViewModel,
     onCancel: () -> Unit,
     modifier: Modifier = Modifier,
+    mode: AddPlantMode = AddPlantMode.FIRST_PLANT,
+    onSaved: () -> Unit = {},
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
@@ -110,10 +112,11 @@ fun AddPlantScreen(
         }
     }
 
-    // Al guardar, cerramos el teclado mientras el routing cambia al jardín.
+    // Al guardar, cerramos el teclado y avisamos a quien nos abrió.
     LaunchedEffect(uiState.isSaved) {
         if (uiState.isSaved) {
             focusManager.clearFocus()
+            onSaved()
         }
     }
 
@@ -138,11 +141,11 @@ fun AddPlantScreen(
                         translationY = contentOffset.toPx()
                     },
             ) {
-                TopBar(onCancel = onCancel)
+                TopBar(onCancel = onCancel, mode = mode)
 
                 Spacer(modifier = Modifier.height(LeaflySpacing.lg))
 
-                Header()
+                Header(mode = mode)
 
                 Spacer(modifier = Modifier.height(LeaflySpacing.lg))
 
@@ -179,19 +182,19 @@ fun AddPlantScreen(
 // ---------------------------------------------------------------------------
 
 @Composable
-private fun TopBar(onCancel: () -> Unit) {
+private fun TopBar(onCancel: () -> Unit, mode: AddPlantMode) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         LeaflyCircularIconButton(
             icon = Icons.Rounded.Close,
-            contentDescription = stringResource(R.string.add_plant_cancel),
+            contentDescription = stringResource(mode.cancelContentDescriptionRes),
             onClick = onCancel,
         )
 
         Text(
-            text = stringResource(R.string.add_plant_eyebrow),
+            text = stringResource(mode.eyebrowRes),
             modifier = Modifier.weight(1f),
             style = MaterialTheme.typography.labelSmall,
             color = Color.White.copy(alpha = 0.75f),
@@ -203,18 +206,18 @@ private fun TopBar(onCancel: () -> Unit) {
 }
 
 @Composable
-private fun Header() {
+private fun Header(mode: AddPlantMode) {
     Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(LeaflySpacing.xs),
     ) {
         Text(
-            text = stringResource(R.string.add_plant_title),
+            text = stringResource(mode.titleRes),
             style = MaterialTheme.typography.titleLarge,
             color = Color.White,
         )
         Text(
-            text = stringResource(R.string.add_plant_subtitle),
+            text = stringResource(mode.subtitleRes),
             style = MaterialTheme.typography.bodyLarge,
             color = Color.White.copy(alpha = 0.88f),
         )

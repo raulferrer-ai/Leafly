@@ -65,6 +65,7 @@ fun OnboardingFlowScreen(
 
             OnboardingStep.AddPlant -> AddPlantScreen(
                 viewModel = addPlantViewModel,
+                mode = AddPlantMode.FIRST_PLANT,
                 onCancel = {
                     addPlantViewModel.reset()
                     step = OnboardingStep.Welcome

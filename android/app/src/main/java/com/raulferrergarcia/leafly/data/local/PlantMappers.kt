@@ -9,6 +9,7 @@ fun PlantEntity.toDomain(): Plant = Plant(
     name = name,
     type = typeKey?.let(PlantType::fromKey),
     createdAt = createdAt,
+    lastWateredAt = lastWateredAt,
 )
 
 /** Traduce un modelo de dominio a su representación persistente. */
@@ -17,4 +18,5 @@ fun Plant.toEntity(): PlantEntity = PlantEntity(
     name = name,
     typeKey = type?.key,
     createdAt = createdAt,
+    lastWateredAt = lastWateredAt,
 )

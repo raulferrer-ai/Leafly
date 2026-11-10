@@ -3,6 +3,7 @@ package com.raulferrergarcia.leafly.designsystem
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
@@ -117,6 +118,7 @@ fun LeaflyScreen(
 fun LeaflyCard(
     modifier: Modifier = Modifier,
     padding: Dp = LeaflySpacing.lg,
+    onClick: (() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val shape = RoundedCornerShape(LeaflyRadius.card)
@@ -131,6 +133,13 @@ fun LeaflyCard(
             )
             .clip(shape)
             .background(LeaflyColors.Surface)
+            .then(
+                if (onClick != null) {
+                    Modifier.clickable(role = Role.Button, onClick = onClick)
+                } else {
+                    Modifier
+                },
+            )
             .padding(padding),
         content = content,
     )

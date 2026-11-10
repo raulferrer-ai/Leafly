@@ -37,7 +37,10 @@ fun LeaflyRoot(
         when (state) {
             RootUiState.Loading -> LeaflyScreen {}
             RootUiState.Onboarding -> OnboardingFlowScreen(addPlant = addPlant)
-            is RootUiState.Plants -> PlantsScreen(plants = state.plants)
+            RootUiState.Plants -> PlantsScreen(
+                observePlants = observePlants,
+                addPlant = addPlant,
+            )
         }
     }
 }
