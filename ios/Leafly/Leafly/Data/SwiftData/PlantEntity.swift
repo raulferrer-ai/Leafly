@@ -16,19 +16,23 @@ final class PlantEntity {
     var typeRawValue: String?
     var createdAt: Date
     var lastWateredAt: Date?
+    /// Foto en JPEG. Se guarda fuera de la base de datos para mantenerla ligera.
+    @Attribute(.externalStorage) var photoData: Data?
 
     init(
         id: UUID,
         name: String,
         typeRawValue: String?,
         createdAt: Date,
-        lastWateredAt: Date?
+        lastWateredAt: Date?,
+        photoData: Data? = nil
     ) {
         self.id = id
         self.name = name
         self.typeRawValue = typeRawValue
         self.createdAt = createdAt
         self.lastWateredAt = lastWateredAt
+        self.photoData = photoData
     }
 }
 
@@ -40,7 +44,8 @@ extension PlantEntity {
             name: plant.name,
             typeRawValue: plant.type?.rawValue,
             createdAt: plant.createdAt,
-            lastWateredAt: plant.lastWateredAt
+            lastWateredAt: plant.lastWateredAt,
+            photoData: plant.photoData
         )
     }
 
@@ -56,7 +61,8 @@ extension PlantEntity {
             name: name,
             type: plantType,
             createdAt: createdAt,
-            lastWateredAt: lastWateredAt
+            lastWateredAt: lastWateredAt,
+            photoData: photoData
         )
     }
 }

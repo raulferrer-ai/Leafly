@@ -61,6 +61,45 @@ final class AddPlantViewModelTests: XCTestCase {
 
         XCTAssertTrue(didSave)
         XCTAssertEqual(repository.savedPlants.first?.type, nil)
+        XCTAssertNil(repository.savedPlants.first?.photoData)
+    }
+
+    func testSaveKeepsSelectedPhoto() async {
+        let repository = MockPlantRepository()
+        let viewModel = AddPlantViewModel(repository: repository)
+        viewModel.name = "Monstera"
+        let photoData = Data([0x01, 0x02, 0x03, 0x04])
+        viewModel.setPhotoData(photoData)
+
+        let didSave = await viewModel.save()
+
+        XCTAssertTrue(didSave)
+        XCTAssertEqual(repository.savedPlants.first?.photoData, photoData)
+    }
+
+    func testSelectingPhotoDoesNotPersistUntilSave() async {
+        let repository = MockPlantRepository()
+        let viewModel = AddPlantViewModel(repository: repository)
+        viewModel.name = "Ficus"
+
+        viewModel.setPhotoData(Data([0x0A, 0x0B]))
+
+        XCTAssertTrue(repository.savedPlants.isEmpty)
+        XCTAssertEqual(viewModel.photoData, Data([0x0A, 0x0B]))
+    }
+
+    func testRemovingPhotoSavesPlantWithoutImage() async {
+        let repository = MockPlantRepository()
+        let viewModel = AddPlantViewModel(repository: repository)
+        viewModel.name = "Potos"
+        viewModel.setPhotoData(Data([0x0C]))
+
+        viewModel.removePhoto()
+        let didSave = await viewModel.save()
+
+        XCTAssertTrue(didSave)
+        XCTAssertNil(viewModel.photoData)
+        XCTAssertNil(repository.savedPlants.first?.photoData)
     }
 
     func testSelectingSameTypeTwiceDeselectsIt() async {

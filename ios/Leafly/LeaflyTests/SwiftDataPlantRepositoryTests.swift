@@ -77,6 +77,36 @@ final class SwiftDataPlantRepositoryTests: XCTestCase {
         XCTAssertNil(plants.first?.lastWateredAt)
     }
 
+    func testAddPersistsPhoto() async throws {
+        let repository = try makeRepository()
+        let photoData = Data([0xFF, 0xD8, 0xFF, 0xD9])
+        let plant = Plant(name: "Con foto", photoData: photoData)
+
+        try await repository.add(plant)
+
+        let plants = try await repository.fetchPlants()
+        XCTAssertEqual(plants.first?.photoData, photoData)
+    }
+
+    func testUpdateCanReplaceAndRemovePhoto() async throws {
+        let repository = try makeRepository()
+        let plant = Plant(name: "Con foto", photoData: Data([0x01]))
+        try await repository.add(plant)
+
+        var updated = plant
+        updated.photoData = Data([0x02, 0x03])
+        try await repository.update(updated)
+
+        var plants = try await repository.fetchPlants()
+        XCTAssertEqual(plants.first?.photoData, Data([0x02, 0x03]))
+
+        updated.photoData = nil
+        try await repository.update(updated)
+
+        plants = try await repository.fetchPlants()
+        XCTAssertNil(plants.first?.photoData)
+    }
+
     func testUpdatePersistsLastWateredDate() async throws {
         let repository = try makeRepository()
         let plant = Plant(name: "Monstera", type: .monstera)

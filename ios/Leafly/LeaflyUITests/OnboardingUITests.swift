@@ -69,4 +69,28 @@ final class OnboardingUITests: XCTestCase {
         )
         XCTAssertTrue(app.staticTexts["Añade tu primera planta"].exists)
     }
+
+    func testPhotoSectionIsOptionalAndCanBeSkipped() throws {
+        let app = XCUIApplication()
+        app.launchArguments.append("-useInMemoryStoreForUITests")
+        app.launch()
+
+        let addButton = app.buttons["Añadir mi primera planta"]
+        XCTAssertTrue(addButton.waitForExistence(timeout: 10))
+        addButton.tap()
+
+        XCTAssertTrue(app.staticTexts["La foto de tu planta"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["pick-photo-button"].exists)
+        XCTAssertTrue(app.staticTexts["Todavía sin foto"].exists)
+
+        let nameField = app.textFields["Por ejemplo, Monstera"]
+        XCTAssertTrue(nameField.waitForExistence(timeout: 5))
+        nameField.tap()
+        nameField.typeText("Monstera")
+
+        app.buttons["Guardar planta"].tap()
+
+        XCTAssertTrue(app.staticTexts["Mis plantas"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts["Monstera"].exists)
+    }
 }

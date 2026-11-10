@@ -98,7 +98,7 @@ struct PlantDetailView: View {
     private var statusCard: some View {
         LeaflyCard(padding: LeaflySpacing.md) {
             HStack(spacing: LeaflySpacing.md) {
-                avatar
+                PlantAvatar(plant: viewModel.plant, size: 64)
 
                 VStack(alignment: .leading, spacing: 4) {
                     LeaflyStatusBadge(
@@ -118,19 +118,6 @@ struct PlantDetailView: View {
             }
         }
         .animation(.snappy(duration: 0.25), value: viewModel.plant.lastWateredAt)
-    }
-
-    private var avatar: some View {
-        ZStack {
-            Circle()
-                .fill(LeaflyColor.primarySoft)
-                .frame(width: 58, height: 58)
-
-            Image(systemName: viewModel.plant.type?.symbolName ?? "leaf.fill")
-                .font(.system(size: 22, weight: .semibold))
-                .foregroundStyle(LeaflyColor.secondary)
-        }
-        .accessibilityHidden(true)
     }
 
     // MARK: - Acción principal

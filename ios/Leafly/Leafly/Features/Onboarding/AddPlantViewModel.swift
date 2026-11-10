@@ -14,6 +14,8 @@ final class AddPlantViewModel {
 
     var name: String = ""
     var selectedType: PlantType?
+    /// Foto elegida para la planta. Se mantiene solo en memoria hasta guardar.
+    private(set) var photoData: Data?
 
     private(set) var nameError: String?
     private(set) var saveError: String?
@@ -32,6 +34,16 @@ final class AddPlantViewModel {
 
     func clearType() {
         selectedType = nil
+    }
+
+    /// Guarda en memoria la foto elegida. Solo se persiste al guardar la planta.
+    func setPhotoData(_ data: Data?) {
+        photoData = data
+    }
+
+    /// Quita la foto elegida; la planta se guardará sin imagen.
+    func removePhoto() {
+        photoData = nil
     }
 
     /// El error desaparece en cuanto la persona empieza a escribir.
@@ -55,7 +67,7 @@ final class AddPlantViewModel {
         saveError = nil
         defer { isSaving = false }
 
-        let plant = Plant(name: trimmedName, type: selectedType)
+        let plant = Plant(name: trimmedName, type: selectedType, photoData: photoData)
 
         do {
             try await repository.add(plant)

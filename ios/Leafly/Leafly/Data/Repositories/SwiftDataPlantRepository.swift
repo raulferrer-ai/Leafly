@@ -46,6 +46,7 @@ final class SwiftDataPlantRepository: PlantRepository {
         entity.typeRawValue = plant.type?.rawValue
         entity.createdAt = plant.createdAt
         entity.lastWateredAt = plant.lastWateredAt
+        entity.photoData = plant.photoData
 
         try context.save()
     }

@@ -233,7 +233,7 @@ private struct PlantCard: View {
     var body: some View {
         LeaflyCard(padding: LeaflySpacing.md) {
             HStack(alignment: .center, spacing: LeaflySpacing.md) {
-                avatar
+                PlantAvatar(plant: plant)
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text(plant.name)
@@ -271,19 +271,6 @@ private struct PlantCard: View {
         }
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(plant.name), \(status.title), \(summary)")
-    }
-
-    private var avatar: some View {
-        ZStack {
-            Circle()
-                .fill(LeaflyColor.primarySoft)
-                .frame(width: 58, height: 58)
-
-            Image(systemName: plant.type?.symbolName ?? "leaf.fill")
-                .font(.system(size: 22, weight: .semibold))
-                .foregroundStyle(LeaflyColor.secondary)
-        }
-        .accessibilityHidden(true)
     }
 }
 

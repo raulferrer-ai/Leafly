@@ -5,7 +5,10 @@
 //  Created by RaulF on 06/11/2026.
 //
 
+import AVFoundation
+import PhotosUI
 import SwiftUI
+import UIKit
 
 /// Contexto en el que se abre la pantalla de añadir planta.
 /// Cambia solo los textos, no el comportamiento.
@@ -54,6 +57,10 @@ struct AddPlantView: View {
 
     @State private var viewModel: AddPlantViewModel
     @State private var hasAppeared = false
+    @State private var selectedPhotoItem: PhotosPickerItem?
+    @State private var isShowingCamera = false
+    @State private var isProcessingPhoto = false
+    @State private var cameraMessage: String?
     @FocusState private var isNameFocused: Bool
 
     init(
@@ -75,6 +82,7 @@ struct AddPlantView: View {
                     topBar
                     header
                     nameSection
+                    photoSection
                     typeSection
                 }
                 .frame(maxWidth: LeaflySpacing.contentMaxWidth)
@@ -94,6 +102,16 @@ struct AddPlantView: View {
             withAnimation(.easeOut(duration: 0.45)) {
                 hasAppeared = true
             }
+        }
+        .onChange(of: selectedPhotoItem) { _, item in
+            guard let item else { return }
+            Task { await loadPhoto(from: item) }
+        }
+        .sheet(isPresented: $isShowingCamera) {
+            CameraPicker { data in
+                Task { await applyCapturedPhoto(data) }
+            }
+            .ignoresSafeArea()
         }
     }
 
@@ -199,6 +217,121 @@ struct AddPlantView: View {
         }
     }
 
+    // MARK: - Foto
+
+    private var photoSection: some View {
+        LeaflyCard {
+            VStack(alignment: .leading, spacing: LeaflySpacing.sm) {
+                HStack(alignment: .firstTextBaseline) {
+                    Text("La foto de tu planta")
+                        .font(LeaflyFont.headline)
+                        .foregroundStyle(LeaflyColor.textPrimary)
+
+                    Spacer()
+
+                    Text("Opcional")
+                        .font(LeaflyFont.caption)
+                        .foregroundStyle(LeaflyColor.textTertiary)
+                }
+
+                Text("Una foto ayuda a reconocerla de un vistazo.")
+                    .font(LeaflyFont.footnote)
+                    .foregroundStyle(LeaflyColor.textSecondary)
+
+                if let photoData = viewModel.photoData,
+                   let image = PlantPhotoDecoder.image(from: photoData) {
+                    photoPreview(image)
+                } else {
+                    photoPlaceholder
+                }
+
+                photoActions
+
+                if let cameraMessage {
+                    Label(cameraMessage, systemImage: "info.circle")
+                        .font(LeaflyFont.footnote)
+                        .foregroundStyle(LeaflyColor.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .transition(.opacity)
+                }
+            }
+            .animation(.snappy(duration: 0.25), value: viewModel.photoData)
+            .animation(.snappy(duration: 0.25), value: cameraMessage)
+        }
+    }
+
+    private func photoPreview(_ image: UIImage) -> some View {
+        Image(uiImage: image)
+            .resizable()
+            .scaledToFill()
+            .frame(maxWidth: .infinity)
+            .frame(height: 180)
+            .clipShape(
+                RoundedRectangle(cornerRadius: LeaflyRadius.control, style: .continuous)
+            )
+            .accessibilityLabel("Foto elegida para tu planta")
+            .accessibilityIdentifier("plant-photo-preview")
+    }
+
+    private var photoPlaceholder: some View {
+        VStack(spacing: LeaflySpacing.xs) {
+            Image(systemName: isProcessingPhoto ? "hourglass" : "photo")
+                .font(.system(size: 26, weight: .semibold))
+                .foregroundStyle(LeaflyColor.secondary.opacity(0.7))
+
+            Text(isProcessingPhoto ? "Preparando la foto..." : "Todavía sin foto")
+                .font(LeaflyFont.footnote)
+                .foregroundStyle(LeaflyColor.textSecondary)
+        }
+        .frame(maxWidth: .infinity)
+        .frame(height: 130)
+        .background(
+            RoundedRectangle(cornerRadius: LeaflyRadius.control, style: .continuous)
+                .fill(LeaflyColor.fieldSurface)
+        )
+        .accessibilityIdentifier("plant-photo-placeholder")
+    }
+
+    private var photoActions: some View {
+        let galleryTitle = viewModel.photoData == nil ? "Elegir de la galería" : "Cambiar foto"
+
+        return VStack(spacing: LeaflySpacing.xs) {
+            PhotosPicker(
+                selection: $selectedPhotoItem,
+                matching: .images,
+                photoLibrary: .shared()
+            ) {
+                Label(galleryTitle, systemImage: "photo.on.rectangle")
+            }
+            .buttonStyle(LeaflyQuietButtonStyle())
+            .disabled(isProcessingPhoto)
+            .accessibilityIdentifier("pick-photo-button")
+
+            if UIImagePickerController.isSourceTypeAvailable(.camera) {
+                Button {
+                    requestCamera()
+                } label: {
+                    Label("Hacer una foto", systemImage: "camera")
+                }
+                .buttonStyle(LeaflyQuietButtonStyle())
+                .disabled(isProcessingPhoto)
+                .accessibilityIdentifier("camera-photo-button")
+            }
+
+            if viewModel.photoData != nil {
+                Button(role: .destructive) {
+                    withAnimation(.snappy(duration: 0.2)) {
+                        viewModel.removePhoto()
+                    }
+                } label: {
+                    Label("Quitar foto", systemImage: "trash")
+                }
+                .buttonStyle(LeaflyQuietButtonStyle())
+                .accessibilityIdentifier("remove-photo-button")
+            }
+        }
+    }
+
     // MARK: - Tipo
 
     private var typeSection: some View {
@@ -271,7 +404,7 @@ struct AddPlantView: View {
                 }
             }
             .buttonStyle(LeaflyPrimaryButtonStyle())
-            .disabled(viewModel.isSaving)
+            .disabled(viewModel.isSaving || isProcessingPhoto)
         }
         .frame(maxWidth: LeaflySpacing.contentMaxWidth)
         .padding(.horizontal, LeaflySpacing.screenHorizontal)
@@ -295,6 +428,64 @@ struct AddPlantView: View {
     }
 
     // MARK: - Acciones
+
+    /// Pide la cámara con calma: si no hay permiso, se puede seguir con la
+    /// galería o guardar sin foto.
+    private func requestCamera() {
+        cameraMessage = nil
+
+        switch AVCaptureDevice.authorizationStatus(for: .video) {
+        case .authorized:
+            isShowingCamera = true
+
+        case .notDetermined:
+            Task {
+                let granted = await AVCaptureDevice.requestAccess(for: .video)
+                if granted {
+                    isShowingCamera = true
+                } else {
+                    cameraMessage = Self.cameraPermissionMessage
+                }
+            }
+
+        default:
+            cameraMessage = Self.cameraPermissionMessage
+        }
+    }
+
+    private func loadPhoto(from item: PhotosPickerItem) async {
+        isProcessingPhoto = true
+        defer {
+            isProcessingPhoto = false
+            selectedPhotoItem = nil
+        }
+
+        guard let data = try? await item.loadTransferable(type: Data.self),
+              let processed = PlantPhotoProcessor.processedJPEGData(from: data) else {
+            cameraMessage = "No hemos podido usar esa foto. Prueba con otra."
+            return
+        }
+
+        withAnimation(.snappy(duration: 0.25)) {
+            viewModel.setPhotoData(processed)
+            cameraMessage = nil
+        }
+    }
+
+    private func applyCapturedPhoto(_ data: Data) async {
+        guard let processed = PlantPhotoProcessor.processedJPEGData(from: data) else {
+            cameraMessage = "No hemos podido usar esa foto. Inténtalo de nuevo."
+            return
+        }
+
+        withAnimation(.snappy(duration: 0.25)) {
+            viewModel.setPhotoData(processed)
+            cameraMessage = nil
+        }
+    }
+
+    private static let cameraPermissionMessage =
+        "Sin permiso de cámara. Puedes elegir una foto de la galería o guardar sin foto."
 
     private func save() async {
         let didSave = await viewModel.save()

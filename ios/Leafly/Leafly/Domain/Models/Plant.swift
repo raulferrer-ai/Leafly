@@ -16,19 +16,23 @@ nonisolated struct Plant: Identifiable, Hashable, Sendable {
     var createdAt: Date
     /// Último riego registrado. `nil` significa que aún no se ha regado.
     var lastWateredAt: Date?
+    /// Foto de la planta ya procesada (JPEG reducido). `nil` significa sin foto.
+    var photoData: Data?
 
     init(
         id: UUID = UUID(),
         name: String,
         type: PlantType? = nil,
         createdAt: Date = .now,
-        lastWateredAt: Date? = nil
+        lastWateredAt: Date? = nil,
+        photoData: Data? = nil
     ) {
         self.id = id
         self.name = name
         self.type = type
         self.createdAt = createdAt
         self.lastWateredAt = lastWateredAt
+        self.photoData = photoData
     }
 }
 
