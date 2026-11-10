@@ -79,7 +79,7 @@ final class PlantDetailViewModelTests: XCTestCase {
     func testMarkAsWateredPersistsTheUpdatedPlant() async {
         let plant = Plant(name: "Ficus", type: .ficus)
         let repository = MockPlantDetailRepository(plants: [plant])
-        let viewModel = PlantDetailViewModel(plant: plant, repository: repository, now: { self.now })
+        let viewModel = makeViewModel(plant: plant, repository: repository)
 
         await viewModel.markAsWatered()
 
@@ -93,7 +93,7 @@ final class PlantDetailViewModelTests: XCTestCase {
         let createdAt = date(daysAgo: 20, from: now)
         let plant = Plant(name: "Potos", type: .pothos, createdAt: createdAt)
         let repository = MockPlantDetailRepository(plants: [plant])
-        let viewModel = PlantDetailViewModel(plant: plant, repository: repository, now: { self.now })
+        let viewModel = makeViewModel(plant: plant, repository: repository)
 
         await viewModel.markAsWatered()
 
@@ -113,6 +113,7 @@ final class PlantDetailViewModelTests: XCTestCase {
         let viewModel = PlantDetailViewModel(
             plant: plant,
             repository: repository,
+            reminders: MockDetailReminders(),
             now: { currentDate }
         )
 
@@ -122,13 +123,46 @@ final class PlantDetailViewModelTests: XCTestCase {
         XCTAssertEqual(viewModel.plant.lastWateredAt, laterNow)
     }
 
+    // MARK: - Recordatorios
+
+    func testMarkAsWateredCancelsThePlantReminder() async {
+        let plant = Plant(
+            name: "Monstera",
+            lastWateredAt: date(daysAgo: 8, from: now)
+        )
+        let reminders = MockDetailReminders()
+        let viewModel = makeViewModel(plant: plant, reminders: reminders)
+
+        let didSave = await viewModel.markAsWatered()
+
+        XCTAssertTrue(didSave)
+        XCTAssertEqual(reminders.cancelledPlantIDs, [plant.id])
+    }
+
+    func testMarkAsWateredFailureKeepsTheReminder() async {
+        let plant = Plant(name: "Monstera", lastWateredAt: date(daysAgo: 8, from: now))
+        let repository = MockPlantDetailRepository(plants: [plant])
+        repository.updateError = MockError.updateFailed
+        let reminders = MockDetailReminders()
+        let viewModel = makeViewModel(
+            plant: plant,
+            repository: repository,
+            reminders: reminders
+        )
+
+        let didSave = await viewModel.markAsWatered()
+
+        XCTAssertFalse(didSave)
+        XCTAssertTrue(reminders.cancelledPlantIDs.isEmpty)
+    }
+
     // MARK: - Errores
 
     func testMarkAsWateredFailureKeepsPlantAndShowsMessage() async {
         let plant = Plant(name: "Monstera", lastWateredAt: date(daysAgo: 8, from: now))
         let repository = MockPlantDetailRepository(plants: [plant])
         repository.updateError = MockError.updateFailed
-        let viewModel = PlantDetailViewModel(plant: plant, repository: repository, now: { self.now })
+        let viewModel = makeViewModel(plant: plant, repository: repository)
 
         let didSave = await viewModel.markAsWatered()
 
@@ -144,10 +178,15 @@ final class PlantDetailViewModelTests: XCTestCase {
 
     // MARK: - Helpers
 
-    private func makeViewModel(plant: Plant) -> PlantDetailViewModel {
+    private func makeViewModel(
+        plant: Plant,
+        repository: MockPlantDetailRepository? = nil,
+        reminders: MockDetailReminders = MockDetailReminders()
+    ) -> PlantDetailViewModel {
         PlantDetailViewModel(
             plant: plant,
-            repository: MockPlantDetailRepository(plants: [plant]),
+            repository: repository ?? MockPlantDetailRepository(plants: [plant]),
+            reminders: reminders,
             now: { self.now }
         )
     }
@@ -184,6 +223,20 @@ private final class MockPlantDetailRepository: PlantRepository {
 
         plants[index] = plant
         updatedPlants.append(plant)
+    }
+}
+
+@MainActor
+private final class MockDetailReminders: WateringReminderScheduling {
+    private(set) var syncedPlants: [[Plant]] = []
+    private(set) var cancelledPlantIDs: [UUID] = []
+
+    func sync(plants: [Plant]) async {
+        syncedPlants.append(plants)
+    }
+
+    func cancelReminder(for plantID: UUID) async {
+        cancelledPlantIDs.append(plantID)
     }
 }
 

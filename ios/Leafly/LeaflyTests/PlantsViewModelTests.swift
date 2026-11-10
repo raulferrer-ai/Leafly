@@ -17,7 +17,7 @@ final class PlantsViewModelTests: XCTestCase {
             Plant(name: "Ficus", type: .ficus)
         ]
         let repository = MockPlantRepository(plants: plants)
-        let viewModel = PlantsViewModel(repository: repository)
+        let viewModel = makeViewModel(repository: repository)
 
         await viewModel.load()
 
@@ -27,7 +27,7 @@ final class PlantsViewModelTests: XCTestCase {
     }
 
     func testLoadWithoutPlantsLeavesEmptyListWithoutError() async {
-        let viewModel = PlantsViewModel(repository: MockPlantRepository(plants: []))
+        let viewModel = makeViewModel(repository: MockPlantRepository(plants: []))
 
         await viewModel.load()
 
@@ -39,7 +39,7 @@ final class PlantsViewModelTests: XCTestCase {
     func testLoadFailureShowsCalmMessage() async {
         let repository = MockPlantRepository(plants: [])
         repository.errorToThrow = MockError.fetchFailed
-        let viewModel = PlantsViewModel(repository: repository)
+        let viewModel = makeViewModel(repository: repository)
 
         await viewModel.load()
 
@@ -54,7 +54,7 @@ final class PlantsViewModelTests: XCTestCase {
     func testReloadReplacesPlantsAndClearsPreviousError() async {
         let repository = MockPlantRepository(plants: [])
         repository.errorToThrow = MockError.fetchFailed
-        let viewModel = PlantsViewModel(repository: repository)
+        let viewModel = makeViewModel(repository: repository)
 
         await viewModel.load()
         XCTAssertNotNil(viewModel.errorMessage)
@@ -67,28 +67,83 @@ final class PlantsViewModelTests: XCTestCase {
         XCTAssertEqual(viewModel.plants.map(\.name), ["Orquídea"])
     }
 
+    // MARK: - Recordatorios
+
+    func testLoadSynchronizesRemindersWithTheLoadedPlants() async {
+        let plants = [Plant(name: "Monstera"), Plant(name: "Ficus")]
+        let reminders = MockPlantsReminders()
+        let viewModel = makeViewModel(
+            repository: MockPlantRepository(plants: plants),
+            reminders: reminders
+        )
+
+        await viewModel.load()
+
+        XCTAssertEqual(reminders.syncedPlants, [plants])
+    }
+
+    func testLoadFailureDoesNotTouchReminders() async {
+        let repository = MockPlantRepository(plants: [])
+        repository.errorToThrow = MockError.fetchFailed
+        let reminders = MockPlantsReminders()
+        let viewModel = makeViewModel(repository: repository, reminders: reminders)
+
+        await viewModel.load()
+
+        XCTAssertTrue(reminders.syncedPlants.isEmpty)
+    }
+
     func testReplaceReflectsAPlantUpdatedInTheDetail() async {
         let plant = Plant(name: "Monstera", type: .monstera)
-        let viewModel = PlantsViewModel(repository: MockPlantRepository(plants: [plant]))
+        let viewModel = makeViewModel(repository: MockPlantRepository(plants: [plant]))
         await viewModel.load()
 
         var wateredPlant = plant
         wateredPlant.lastWateredAt = .now
-        viewModel.replace(wateredPlant)
+        await viewModel.replace(wateredPlant)
 
         XCTAssertEqual(viewModel.plants.first?.lastWateredAt, wateredPlant.lastWateredAt)
         XCTAssertEqual(viewModel.plants.first?.name, "Monstera")
     }
 
-    func testReplaceIgnoresUnknownPlants() async {
-        let viewModel = PlantsViewModel(
-            repository: MockPlantRepository(plants: [Plant(name: "Monstera")])
+    func testReplaceSynchronizesRemindersAfterTheChange() async {
+        let plant = Plant(name: "Monstera")
+        let reminders = MockPlantsReminders()
+        let viewModel = makeViewModel(
+            repository: MockPlantRepository(plants: [plant]),
+            reminders: reminders
         )
         await viewModel.load()
 
-        viewModel.replace(Plant(name: "Otra"))
+        var wateredPlant = plant
+        wateredPlant.lastWateredAt = .now
+        await viewModel.replace(wateredPlant)
+
+        XCTAssertEqual(reminders.syncedPlants.count, 2)
+        XCTAssertEqual(reminders.syncedPlants.last, [wateredPlant])
+    }
+
+    func testReplaceIgnoresUnknownPlants() async {
+        let reminders = MockPlantsReminders()
+        let viewModel = makeViewModel(
+            repository: MockPlantRepository(plants: [Plant(name: "Monstera")]),
+            reminders: reminders
+        )
+        await viewModel.load()
+
+        await viewModel.replace(Plant(name: "Otra"))
 
         XCTAssertEqual(viewModel.plants.map(\.name), ["Monstera"])
+        XCTAssertEqual(reminders.syncedPlants.count, 1)
+    }
+
+    // MARK: - Helpers
+
+    private func makeViewModel(
+        repository: MockPlantRepository,
+        reminders: MockPlantsReminders = MockPlantsReminders()
+    ) -> PlantsViewModel {
+        PlantsViewModel(repository: repository, reminders: reminders)
     }
 }
 
@@ -119,6 +174,20 @@ private final class MockPlantRepository: PlantRepository {
             throw PlantRepositoryError.plantNotFound
         }
         plants[index] = plant
+    }
+}
+
+@MainActor
+private final class MockPlantsReminders: WateringReminderScheduling {
+    private(set) var syncedPlants: [[Plant]] = []
+    private(set) var cancelledPlantIDs: [UUID] = []
+
+    func sync(plants: [Plant]) async {
+        syncedPlants.append(plants)
+    }
+
+    func cancelReminder(for plantID: UUID) async {
+        cancelledPlantIDs.append(plantID)
     }
 }
 

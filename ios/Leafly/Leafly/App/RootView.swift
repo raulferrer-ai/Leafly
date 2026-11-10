@@ -12,11 +12,16 @@ import SwiftData
 /// sin plantas → onboarding; con plantas → jardín.
 struct RootView: View {
     private let repository: any PlantRepository
+    private let reminders: any WateringReminderScheduling
 
     @Query private var plants: [PlantEntity]
 
-    init(repository: any PlantRepository) {
+    init(
+        repository: any PlantRepository,
+        reminders: any WateringReminderScheduling
+    ) {
         self.repository = repository
+        self.reminders = reminders
     }
 
     var body: some View {
@@ -25,7 +30,7 @@ struct RootView: View {
                 OnboardingFlowView(repository: repository)
                     .transition(.opacity)
             } else {
-                PlantsHomeView(repository: repository)
+                PlantsHomeView(repository: repository, reminders: reminders)
                     .transition(.opacity)
             }
         }

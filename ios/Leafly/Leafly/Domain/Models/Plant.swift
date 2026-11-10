@@ -35,12 +35,12 @@ nonisolated struct Plant: Identifiable, Hashable, Sendable {
 extension Plant {
 
     /// Fecha de referencia para el riego: el último riego o, si no hay, el día en que se añadió.
-    var wateringReferenceDate: Date {
+    nonisolated var wateringReferenceDate: Date {
         lastWateredAt ?? createdAt
     }
 
     /// Días completos transcurridos desde la fecha de referencia del riego.
-    func daysSinceWatering(on date: Date = .now, calendar: Calendar = .current) -> Int {
+    nonisolated func daysSinceWatering(on date: Date = .now, calendar: Calendar = .current) -> Int {
         let start = calendar.startOfDay(for: wateringReferenceDate)
         let end = calendar.startOfDay(for: date)
         let days = calendar.dateComponents([.day], from: start, to: end).day ?? 0
@@ -48,7 +48,7 @@ extension Plant {
     }
 
     /// Estado de riego calculado para una fecha concreta. Testeable e independiente de la UI.
-    func wateringStatus(on date: Date = .now, calendar: Calendar = .current) -> WateringStatus {
+    nonisolated func wateringStatus(on date: Date = .now, calendar: Calendar = .current) -> WateringStatus {
         WateringStatus(daysSinceWatering: daysSinceWatering(on: date, calendar: calendar))
     }
 }

@@ -16,9 +16,14 @@ final class PlantsViewModel {
     private(set) var errorMessage: String?
 
     private let repository: any PlantRepository
+    private let reminders: any WateringReminderScheduling
 
-    init(repository: any PlantRepository) {
+    init(
+        repository: any PlantRepository,
+        reminders: any WateringReminderScheduling
+    ) {
         self.repository = repository
+        self.reminders = reminders
     }
 
     /// Carga las plantas guardadas. Es idempotente mientras hay una carga en curso.
@@ -27,18 +32,26 @@ final class PlantsViewModel {
 
         isLoading = true
         errorMessage = nil
-        defer { isLoading = false }
 
         do {
-            plants = try await repository.fetchPlants()
+            let loadedPlants = try await repository.fetchPlants()
+            plants = loadedPlants
+            isLoading = false
+
+            // Recalcula los recordatorios según el estado de riego actual.
+            await reminders.sync(plants: loadedPlants)
         } catch {
+            isLoading = false
             errorMessage = "No hemos podido cargar tus plantas. Inténtalo de nuevo."
         }
     }
 
-    /// Refleja al instante una planta que cambió en el detalle, sin recargar.
-    func replace(_ plant: Plant) {
+    /// Refleja al instante una planta que cambió en el detalle y actualiza sus
+    /// recordatorios. La lista se actualiza antes de esperar a las notificaciones.
+    func replace(_ plant: Plant) async {
         guard let index = plants.firstIndex(where: { $0.id == plant.id }) else { return }
         plants[index] = plant
+
+        await reminders.sync(plants: plants)
     }
 }

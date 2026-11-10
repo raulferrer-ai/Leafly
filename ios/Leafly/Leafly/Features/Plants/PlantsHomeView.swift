@@ -10,13 +10,23 @@ import SwiftUI
 /// Lista de todas las plantas, con su estado de riego de un vistazo.
 struct PlantsHomeView: View {
     private let repository: any PlantRepository
+    private let reminders: any WateringReminderScheduling
 
     @State private var viewModel: PlantsViewModel
     @State private var isShowingAddPlant = false
 
-    init(repository: any PlantRepository) {
+    init(
+        repository: any PlantRepository,
+        reminders: any WateringReminderScheduling
+    ) {
         self.repository = repository
-        _viewModel = State(initialValue: PlantsViewModel(repository: repository))
+        self.reminders = reminders
+        _viewModel = State(
+            initialValue: PlantsViewModel(
+                repository: repository,
+                reminders: reminders
+            )
+        )
     }
 
     var body: some View {
@@ -42,8 +52,9 @@ struct PlantsHomeView: View {
                 PlantDetailView(
                     plant: plant,
                     repository: repository,
+                    reminders: reminders,
                     onPlantUpdated: { updatedPlant in
-                        viewModel.replace(updatedPlant)
+                        await viewModel.replace(updatedPlant)
                     }
                 )
             }
@@ -277,7 +288,10 @@ private struct PlantCard: View {
 }
 
 #Preview("Mis plantas") {
-    PlantsHomeView(repository: PreviewPlantsRepository())
+    PlantsHomeView(
+        repository: PreviewPlantsRepository(),
+        reminders: NoopWateringReminders()
+    )
 }
 
 // MARK: - Preview

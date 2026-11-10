@@ -25,15 +25,18 @@ final class PlantDetailViewModel {
     private(set) var errorMessage: String?
 
     private let repository: any PlantRepository
+    private let reminders: any WateringReminderScheduling
     private let now: () -> Date
 
     init(
         plant: Plant,
         repository: any PlantRepository,
+        reminders: any WateringReminderScheduling,
         now: @escaping () -> Date = Date.init
     ) {
         self.plant = plant
         self.repository = repository
+        self.reminders = reminders
         self.now = now
     }
 
@@ -69,6 +72,9 @@ final class PlantDetailViewModel {
         do {
             try await repository.update(wateredPlant)
             plant = wateredPlant
+
+            // Ya está al día: su recordatorio pendiente deja de tener sentido.
+            await reminders.cancelReminder(for: wateredPlant.id)
             return true
         } catch {
             errorMessage = "No hemos podido guardar el riego. Inténtalo de nuevo."

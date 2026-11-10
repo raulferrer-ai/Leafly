@@ -10,7 +10,7 @@ import SwiftUI
 /// Detalle de una planta: su información, su estado de riego y la acción
 /// principal para marcarla como regada.
 struct PlantDetailView: View {
-    private let onPlantUpdated: (Plant) -> Void
+    private let onPlantUpdated: @MainActor (Plant) async -> Void
 
     @State private var viewModel: PlantDetailViewModel
     @Environment(\.dismiss) private var dismiss
@@ -18,10 +18,17 @@ struct PlantDetailView: View {
     init(
         plant: Plant,
         repository: any PlantRepository,
-        onPlantUpdated: @escaping (Plant) -> Void = { _ in }
+        reminders: any WateringReminderScheduling,
+        onPlantUpdated: @escaping @MainActor (Plant) async -> Void = { _ in }
     ) {
         self.onPlantUpdated = onPlantUpdated
-        _viewModel = State(initialValue: PlantDetailViewModel(plant: plant, repository: repository))
+        _viewModel = State(
+            initialValue: PlantDetailViewModel(
+                plant: plant,
+                repository: repository,
+                reminders: reminders
+            )
+        )
     }
 
     var body: some View {
@@ -132,7 +139,7 @@ struct PlantDetailView: View {
         Button {
             Task {
                 if await viewModel.markAsWatered() {
-                    onPlantUpdated(viewModel.plant)
+                    await onPlantUpdated(viewModel.plant)
                 }
             }
         } label: {
@@ -163,7 +170,8 @@ struct PlantDetailView: View {
     NavigationStack {
         PlantDetailView(
             plant: Plant(name: "Monstera", type: .monstera),
-            repository: PreviewPlantDetailRepository()
+            repository: PreviewPlantDetailRepository(),
+            reminders: NoopWateringReminders()
         )
     }
 }
