@@ -25,7 +25,7 @@ struct RootView: View {
                 OnboardingFlowView(repository: repository)
                     .transition(.opacity)
             } else {
-                PlantsHomeView()
+                PlantsHomeView(repository: repository)
                     .transition(.opacity)
             }
         }

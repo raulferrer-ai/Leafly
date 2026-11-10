@@ -6,99 +6,254 @@
 //
 
 import SwiftUI
-import SwiftData
 
-/// Pantalla a la que se llega tras guardar la primera planta.
-/// Por ahora muestra las plantas guardadas; la feature de lista completa llegará después.
+/// Lista de todas las plantas, con su estado de riego de un vistazo.
 struct PlantsHomeView: View {
-    @Query(sort: \PlantEntity.createdAt, order: .forward)
-    private var plants: [PlantEntity]
+    private let repository: any PlantRepository
+
+    @State private var viewModel: PlantsViewModel
+    @State private var isShowingAddPlant = false
+
+    init(repository: any PlantRepository) {
+        self.repository = repository
+        _viewModel = State(initialValue: PlantsViewModel(repository: repository))
+    }
 
     var body: some View {
-        LeaflyScreen {
-            ScrollView(showsIndicators: false) {
-                VStack(alignment: .leading, spacing: LeaflySpacing.lg) {
-                    header
-
-                    VStack(spacing: LeaflySpacing.sm) {
-                        ForEach(plants) { plant in
-                            PlantCard(plant: plant)
-                        }
+        NavigationStack {
+            LeaflyScreen {
+                ScrollView(showsIndicators: false) {
+                    VStack(alignment: .leading, spacing: LeaflySpacing.lg) {
+                        header
+                        content
                     }
+                    .frame(maxWidth: LeaflySpacing.contentMaxWidth)
+                    .padding(.horizontal, LeaflySpacing.screenHorizontal)
+                    .padding(.top, LeaflySpacing.xxl)
+                    .padding(.bottom, LeaflySpacing.xl)
+                    .frame(maxWidth: .infinity)
                 }
-                .frame(maxWidth: LeaflySpacing.contentMaxWidth)
-                .padding(.horizontal, LeaflySpacing.screenHorizontal)
-                .padding(.top, LeaflySpacing.xxl)
-                .padding(.bottom, LeaflySpacing.xl)
-                .frame(maxWidth: .infinity)
+                .refreshable {
+                    await viewModel.load()
+                }
+            }
+            .toolbar(.hidden, for: .navigationBar)
+            .navigationDestination(for: Plant.self) { plant in
+                PlantDetailPlaceholderView(plant: plant)
+            }
+            .sheet(isPresented: $isShowingAddPlant) {
+                addPlantSheet
+            }
+            .task {
+                await viewModel.load()
             }
         }
     }
 
+    // MARK: - Cabecera
+
     private var header: some View {
-        VStack(alignment: .leading, spacing: LeaflySpacing.xs) {
-            Text("TU JARDÍN")
-                .font(LeaflyFont.caption)
-                .tracking(1.4)
-                .foregroundStyle(Color.white.opacity(0.75))
+        HStack(alignment: .top, spacing: LeaflySpacing.md) {
+            VStack(alignment: .leading, spacing: LeaflySpacing.xs) {
+                Text("TU JARDÍN")
+                    .font(LeaflyFont.caption)
+                    .tracking(1.4)
+                    .foregroundStyle(Color.white.opacity(0.75))
 
-            Text("Mis plantas")
-                .font(LeaflyFont.display)
-                .foregroundStyle(Color.white)
+                Text("Mis plantas")
+                    .font(LeaflyFont.display)
+                    .foregroundStyle(Color.white)
 
-            Text(plantsSubtitle)
-                .font(LeaflyFont.body)
-                .foregroundStyle(Color.white.opacity(0.88))
+                Text(plantsSubtitle)
+                    .font(LeaflyFont.body)
+                    .foregroundStyle(Color.white.opacity(0.88))
+            }
+
+            Spacer(minLength: 0)
+
+            Button {
+                isShowingAddPlant = true
+            } label: {
+                Image(systemName: "plus")
+            }
+            .buttonStyle(LeaflyCircularButtonStyle())
+            .accessibilityLabel("Añadir una planta")
+            .accessibilityIdentifier("add-plant-button")
         }
     }
 
     private var plantsSubtitle: String {
-        plants.count == 1
-            ? "Una planta a tu cuidado."
-            : "\(plants.count) plantas a tu cuidado."
+        switch viewModel.plants.count {
+        case 0: "Un lugar tranquilo para tus plantas."
+        case 1: "Una planta a tu cuidado."
+        default: "\(viewModel.plants.count) plantas a tu cuidado."
+        }
+    }
+
+    // MARK: - Contenido
+
+    @ViewBuilder
+    private var content: some View {
+        if viewModel.isLoading && viewModel.plants.isEmpty {
+            loadingView
+        } else if let errorMessage = viewModel.errorMessage {
+            errorCard(message: errorMessage)
+        } else if viewModel.plants.isEmpty {
+            emptyState
+        } else {
+            plantsList
+        }
+    }
+
+    private var loadingView: some View {
+        HStack {
+            Spacer()
+            ProgressView()
+                .tint(.white)
+                .padding(.top, LeaflySpacing.xl)
+            Spacer()
+        }
+        .accessibilityLabel("Cargando tus plantas")
+    }
+
+    private var plantsList: some View {
+        VStack(spacing: LeaflySpacing.sm) {
+            ForEach(viewModel.plants) { plant in
+                NavigationLink(value: plant) {
+                    PlantCard(plant: plant)
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("plant-card-\(plant.name)")
+                .accessibilityHint("Abre el detalle de la planta")
+            }
+        }
+    }
+
+    private func errorCard(message: String) -> some View {
+        LeaflyCard {
+            VStack(alignment: .leading, spacing: LeaflySpacing.sm) {
+                Label("No hemos podido cargar tus plantas", systemImage: "exclamationmark.circle.fill")
+                    .font(LeaflyFont.headline)
+                    .foregroundStyle(LeaflyColor.textPrimary)
+
+                Text(message)
+                    .font(LeaflyFont.footnote)
+                    .foregroundStyle(LeaflyColor.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Button("Reintentar") {
+                    Task { await viewModel.load() }
+                }
+                .buttonStyle(LeaflyQuietButtonStyle())
+            }
+        }
+    }
+
+    private var emptyState: some View {
+        LeaflyCard {
+            VStack(spacing: LeaflySpacing.md) {
+                ZStack {
+                    Circle()
+                        .fill(LeaflyColor.primarySoft)
+                        .frame(width: 64, height: 64)
+
+                    Image(systemName: "leaf")
+                        .font(.system(size: 24, weight: .semibold))
+                        .foregroundStyle(LeaflyColor.secondary)
+                }
+                .accessibilityHidden(true)
+
+                Text("Tu jardín está esperando")
+                    .font(LeaflyFont.title3)
+                    .foregroundStyle(LeaflyColor.textPrimary)
+
+                Text("Añade una planta para empezar a cuidarla con calma.")
+                    .font(LeaflyFont.footnote)
+                    .foregroundStyle(LeaflyColor.textSecondary)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Button("Añadir mi primera planta") {
+                    isShowingAddPlant = true
+                }
+                .buttonStyle(LeaflyPrimaryButtonStyle())
+            }
+            .frame(maxWidth: .infinity)
+        }
+    }
+
+    // MARK: - Añadir planta
+
+    private var addPlantSheet: some View {
+        AddPlantView(
+            repository: repository,
+            onCancel: { isShowingAddPlant = false },
+            onSaved: {
+                isShowingAddPlant = false
+                Task { await viewModel.load() }
+            },
+            mode: .anotherPlant
+        )
+        .presentationDetents([.large])
+        .presentationDragIndicator(.hidden)
+        .presentationCornerRadius(LeaflyRadius.card)
     }
 }
 
 // MARK: - Card de planta
 
 private struct PlantCard: View {
-    let plant: PlantEntity
+    let plant: Plant
+
+    private var status: WateringStatus {
+        plant.wateringStatus()
+    }
+
+    private var summary: String {
+        plant.wateringSummary()
+    }
 
     var body: some View {
         LeaflyCard(padding: LeaflySpacing.md) {
-            HStack(spacing: LeaflySpacing.md) {
+            HStack(alignment: .center, spacing: LeaflySpacing.md) {
                 avatar
 
-                VStack(alignment: .leading, spacing: 3) {
+                VStack(alignment: .leading, spacing: 4) {
                     Text(plant.name)
                         .font(LeaflyFont.title3)
                         .foregroundStyle(LeaflyColor.textPrimary)
                         .lineLimit(2)
+                        .multilineTextAlignment(.leading)
 
-                    if let type = plant.plantType {
+                    if let type = plant.type {
                         Text(type.displayName)
                             .font(LeaflyFont.footnote)
                             .foregroundStyle(LeaflyColor.textSecondary)
                     }
 
-                    Text("Añadida el \(formattedCreationDate)")
+                    Text(summary)
                         .font(LeaflyFont.footnote)
                         .foregroundStyle(LeaflyColor.textTertiary)
                 }
 
-                Spacer(minLength: 0)
+                Spacer(minLength: LeaflySpacing.xs)
+
+                VStack(alignment: .trailing, spacing: LeaflySpacing.xs) {
+                    LeaflyStatusBadge(
+                        title: status.title,
+                        color: status.color,
+                        systemImage: status.symbolName
+                    )
+
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(LeaflyColor.textTertiary)
+                        .accessibilityHidden(true)
+                }
             }
         }
         .accessibilityElement(children: .combine)
-    }
-
-    private var formattedCreationDate: String {
-        plant.createdAt.formatted(
-            .dateTime
-                .day()
-                .month(.wide)
-                .locale(Locale(identifier: "es_ES"))
-        )
+        .accessibilityLabel("\(plant.name), \(status.title), \(summary)")
     }
 
     private var avatar: some View {
@@ -107,7 +262,7 @@ private struct PlantCard: View {
                 .fill(LeaflyColor.primarySoft)
                 .frame(width: 58, height: 58)
 
-            Image(systemName: plant.plantType?.symbolName ?? "leaf.fill")
+            Image(systemName: plant.type?.symbolName ?? "leaf.fill")
                 .font(.system(size: 22, weight: .semibold))
                 .foregroundStyle(LeaflyColor.secondary)
         }
@@ -116,6 +271,20 @@ private struct PlantCard: View {
 }
 
 #Preview("Mis plantas") {
-    PlantsHomeView()
-        .modelContainer(for: PlantEntity.self, inMemory: true)
+    PlantsHomeView(repository: PreviewPlantsRepository())
+}
+
+// MARK: - Preview
+
+@MainActor
+private final class PreviewPlantsRepository: PlantRepository {
+    func fetchPlants() async throws -> [Plant] {
+        [
+            Plant(name: "Monstera", type: .monstera),
+            Plant(name: "Ficus", type: .ficus, lastWateredAt: .now.addingTimeInterval(-6 * 86_400)),
+            Plant(name: "La de la abuela", lastWateredAt: .now.addingTimeInterval(-10 * 86_400)),
+        ]
+    }
+
+    func add(_ plant: Plant) async throws {}
 }

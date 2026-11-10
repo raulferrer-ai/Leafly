@@ -57,6 +57,26 @@ final class SwiftDataPlantRepositoryTests: XCTestCase {
         XCTAssertEqual(plants.map(\.name), ["Primera", "Segunda"])
     }
 
+    func testAddPersistsLastWateredDate() async throws {
+        let repository = try makeRepository()
+        let lastWateredAt = Date(timeIntervalSince1970: 1_800_000_000)
+        let plant = Plant(name: "Regada", lastWateredAt: lastWateredAt)
+
+        try await repository.add(plant)
+
+        let plants = try await repository.fetchPlants()
+        XCTAssertEqual(plants.first?.lastWateredAt, lastWateredAt)
+    }
+
+    func testAddWithoutWateringKeepsLastWateredDateEmpty() async throws {
+        let repository = try makeRepository()
+
+        try await repository.add(Plant(name: "Sin regar"))
+
+        let plants = try await repository.fetchPlants()
+        XCTAssertNil(plants.first?.lastWateredAt)
+    }
+
     // MARK: - Helpers
 
     private func makeRepository() throws -> SwiftDataPlantRepository {

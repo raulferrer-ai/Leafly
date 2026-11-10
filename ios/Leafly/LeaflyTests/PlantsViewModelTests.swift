@@ -1,0 +1,96 @@
+//
+//  PlantsViewModelTests.swift
+//  LeaflyTests
+//
+//  Created by RaulF on 07/11/2026.
+//
+
+import XCTest
+@testable import Leafly
+
+@MainActor
+final class PlantsViewModelTests: XCTestCase {
+
+    func testLoadShowsPlantsFromRepository() async {
+        let plants = [
+            Plant(name: "Monstera", type: .monstera),
+            Plant(name: "Ficus", type: .ficus)
+        ]
+        let repository = MockPlantRepository(plants: plants)
+        let viewModel = PlantsViewModel(repository: repository)
+
+        await viewModel.load()
+
+        XCTAssertEqual(viewModel.plants, plants)
+        XCTAssertNil(viewModel.errorMessage)
+        XCTAssertFalse(viewModel.isLoading)
+    }
+
+    func testLoadWithoutPlantsLeavesEmptyListWithoutError() async {
+        let viewModel = PlantsViewModel(repository: MockPlantRepository(plants: []))
+
+        await viewModel.load()
+
+        XCTAssertTrue(viewModel.plants.isEmpty)
+        XCTAssertNil(viewModel.errorMessage)
+        XCTAssertFalse(viewModel.isLoading)
+    }
+
+    func testLoadFailureShowsCalmMessage() async {
+        let repository = MockPlantRepository(plants: [])
+        repository.errorToThrow = MockError.fetchFailed
+        let viewModel = PlantsViewModel(repository: repository)
+
+        await viewModel.load()
+
+        XCTAssertTrue(viewModel.plants.isEmpty)
+        XCTAssertEqual(
+            viewModel.errorMessage,
+            "No hemos podido cargar tus plantas. Inténtalo de nuevo."
+        )
+        XCTAssertFalse(viewModel.isLoading)
+    }
+
+    func testReloadReplacesPlantsAndClearsPreviousError() async {
+        let repository = MockPlantRepository(plants: [])
+        repository.errorToThrow = MockError.fetchFailed
+        let viewModel = PlantsViewModel(repository: repository)
+
+        await viewModel.load()
+        XCTAssertNotNil(viewModel.errorMessage)
+
+        repository.errorToThrow = nil
+        repository.plants = [Plant(name: "Orquídea", type: .orchid)]
+        await viewModel.load()
+
+        XCTAssertNil(viewModel.errorMessage)
+        XCTAssertEqual(viewModel.plants.map(\.name), ["Orquídea"])
+    }
+}
+
+// MARK: - Dobles de prueba
+
+@MainActor
+private final class MockPlantRepository: PlantRepository {
+    var plants: [Plant]
+    var errorToThrow: Error?
+
+    init(plants: [Plant]) {
+        self.plants = plants
+    }
+
+    func fetchPlants() async throws -> [Plant] {
+        if let errorToThrow {
+            throw errorToThrow
+        }
+        return plants
+    }
+
+    func add(_ plant: Plant) async throws {
+        plants.append(plant)
+    }
+}
+
+private enum MockError: Error {
+    case fetchFailed
+}

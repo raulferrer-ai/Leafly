@@ -7,17 +7,65 @@
 
 import SwiftUI
 
-/// Pantalla para añadir la primera planta.
+/// Contexto en el que se abre la pantalla de añadir planta.
+/// Cambia solo los textos, no el comportamiento.
+enum AddPlantMode {
+    /// Primera planta, dentro del onboarding.
+    case firstPlant
+    /// Planta adicional, desde la lista del jardín.
+    case anotherPlant
+
+    var eyebrow: String {
+        switch self {
+        case .firstPlant: "PRIMERA PLANTA"
+        case .anotherPlant: "NUEVA PLANTA"
+        }
+    }
+
+    var title: String {
+        switch self {
+        case .firstPlant: "Añade tu primera planta"
+        case .anotherPlant: "Añade una planta"
+        }
+    }
+
+    var subtitle: String {
+        switch self {
+        case .firstPlant:
+            "Con un nombre es suficiente. Puedes completar el resto más adelante."
+        case .anotherPlant:
+            "Solo necesitas un nombre. Podrás completar el resto más adelante."
+        }
+    }
+
+    var cancelAccessibilityLabel: String {
+        switch self {
+        case .firstPlant: "Cancelar y volver a la bienvenida"
+        case .anotherPlant: "Cancelar y volver a mis plantas"
+        }
+    }
+}
+
+/// Pantalla para añadir una planta.
 struct AddPlantView: View {
     private let onCancel: () -> Void
+    private let onSaved: () -> Void
+    private let mode: AddPlantMode
 
     @State private var viewModel: AddPlantViewModel
     @State private var hasAppeared = false
     @FocusState private var isNameFocused: Bool
 
-    init(repository: any PlantRepository, onCancel: @escaping () -> Void) {
+    init(
+        repository: any PlantRepository,
+        onCancel: @escaping () -> Void,
+        onSaved: @escaping () -> Void = {},
+        mode: AddPlantMode = .firstPlant
+    ) {
         _viewModel = State(initialValue: AddPlantViewModel(repository: repository))
         self.onCancel = onCancel
+        self.onSaved = onSaved
+        self.mode = mode
     }
 
     var body: some View {
@@ -57,11 +105,11 @@ struct AddPlantView: View {
                 Image(systemName: "xmark")
             }
             .buttonStyle(LeaflyCircularButtonStyle())
-            .accessibilityLabel("Cancelar y volver a la bienvenida")
+            .accessibilityLabel(mode.cancelAccessibilityLabel)
 
             Spacer()
 
-            Text("PRIMERA PLANTA")
+            Text(mode.eyebrow)
                 .font(LeaflyFont.caption)
                 .tracking(1.4)
                 .foregroundStyle(Color.white.opacity(0.75))
@@ -76,12 +124,12 @@ struct AddPlantView: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: LeaflySpacing.xs) {
-            Text("Añade tu primera planta")
+            Text(mode.title)
                 .font(LeaflyFont.title)
                 .foregroundStyle(Color.white)
                 .fixedSize(horizontal: false, vertical: true)
 
-            Text("Con un nombre es suficiente. Puedes completar el resto más adelante.")
+            Text(mode.subtitle)
                 .font(LeaflyFont.body)
                 .foregroundStyle(Color.white.opacity(0.88))
                 .fixedSize(horizontal: false, vertical: true)
@@ -253,6 +301,7 @@ struct AddPlantView: View {
 
         if didSave {
             isNameFocused = false
+            onSaved()
         } else if viewModel.nameError != nil {
             isNameFocused = true
         }

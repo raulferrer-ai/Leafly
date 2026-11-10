@@ -15,12 +15,20 @@ final class PlantEntity {
     var name: String
     var typeRawValue: String?
     var createdAt: Date
+    var lastWateredAt: Date?
 
-    init(id: UUID, name: String, typeRawValue: String?, createdAt: Date) {
+    init(
+        id: UUID,
+        name: String,
+        typeRawValue: String?,
+        createdAt: Date,
+        lastWateredAt: Date?
+    ) {
         self.id = id
         self.name = name
         self.typeRawValue = typeRawValue
         self.createdAt = createdAt
+        self.lastWateredAt = lastWateredAt
     }
 }
 
@@ -31,7 +39,8 @@ extension PlantEntity {
             id: plant.id,
             name: plant.name,
             typeRawValue: plant.type?.rawValue,
-            createdAt: plant.createdAt
+            createdAt: plant.createdAt,
+            lastWateredAt: plant.lastWateredAt
         )
     }
 
@@ -46,7 +55,8 @@ extension PlantEntity {
             id: id,
             name: name,
             type: plantType,
-            createdAt: createdAt
+            createdAt: createdAt,
+            lastWateredAt: lastWateredAt
         )
     }
 }
