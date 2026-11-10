@@ -5,7 +5,6 @@
 //  Created by RaulF on 06/11/2026.
 //
 
-import AVFoundation
 import PhotosUI
 import SwiftUI
 import UIKit
@@ -307,7 +306,7 @@ struct AddPlantView: View {
             .disabled(isProcessingPhoto)
             .accessibilityIdentifier("pick-photo-button")
 
-            if UIImagePickerController.isSourceTypeAvailable(.camera) {
+            if CameraAccess.isAvailable {
                 Button {
                     requestCamera()
                 } label: {
@@ -434,22 +433,12 @@ struct AddPlantView: View {
     private func requestCamera() {
         cameraMessage = nil
 
-        switch AVCaptureDevice.authorizationStatus(for: .video) {
-        case .authorized:
-            isShowingCamera = true
-
-        case .notDetermined:
-            Task {
-                let granted = await AVCaptureDevice.requestAccess(for: .video)
-                if granted {
-                    isShowingCamera = true
-                } else {
-                    cameraMessage = Self.cameraPermissionMessage
-                }
+        Task {
+            if await CameraAccess.requestAuthorization() {
+                isShowingCamera = true
+            } else {
+                cameraMessage = Self.cameraPermissionMessage
             }
-
-        default:
-            cameraMessage = Self.cameraPermissionMessage
         }
     }
 
@@ -513,4 +502,6 @@ private final class PreviewPlantRepository: PlantRepository {
     func fetchPlants() async throws -> [Plant] { [] }
     func add(_ plant: Plant) async throws {}
     func update(_ plant: Plant) async throws {}
+    func fetchPhotos(for plantID: UUID) async throws -> [PlantPhoto] { [] }
+    func addPhoto(_ photo: PlantPhoto) async throws {}
 }

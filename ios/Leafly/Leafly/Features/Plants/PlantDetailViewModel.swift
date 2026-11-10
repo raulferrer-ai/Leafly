@@ -24,6 +24,18 @@ final class PlantDetailViewModel {
     /// Mensaje calmado cuando el riego no se pudo guardar.
     private(set) var errorMessage: String?
 
+    /// Historial de fotos de la planta, de más reciente a más antigua.
+    private(set) var photos: [PlantPhoto] = []
+
+    /// `true` mientras se carga el historial por primera vez.
+    private(set) var isLoadingPhotos = false
+
+    /// `true` mientras se guarda una foto nueva en el historial.
+    private(set) var isAddingPhoto = false
+
+    /// Mensaje calmado cuando el historial no se pudo cargar o guardar.
+    private(set) var photoErrorMessage: String?
+
     private let repository: any PlantRepository
     private let reminders: any WateringReminderScheduling
     private let now: () -> Date
@@ -61,13 +73,8 @@ final class PlantDetailViewModel {
         errorMessage = nil
         defer { isSaving = false }
 
-        let wateredPlant = Plant(
-            id: plant.id,
-            name: plant.name,
-            type: plant.type,
-            createdAt: plant.createdAt,
-            lastWateredAt: now()
-        )
+        var wateredPlant = plant
+        wateredPlant.lastWateredAt = now()
 
         do {
             try await repository.update(wateredPlant)
@@ -78,6 +85,57 @@ final class PlantDetailViewModel {
             return true
         } catch {
             errorMessage = "No hemos podido guardar el riego. Inténtalo de nuevo."
+            return false
+        }
+    }
+
+    // MARK: - Historial de fotos
+
+    /// Carga el historial de fotos de la planta.
+    ///
+    /// Si algo falla, se muestra un mensaje calmado y la planta sigue siendo
+    /// utilizable; el historial simplemente se queda como estaba.
+    func loadPhotoHistory() async {
+        guard !isLoadingPhotos else { return }
+
+        isLoadingPhotos = true
+        photoErrorMessage = nil
+        defer { isLoadingPhotos = false }
+
+        do {
+            let fetched = try await repository.fetchPhotos(for: plant.id)
+            photos = fetched.sorted { $0.addedAt > $1.addedAt }
+        } catch {
+            photoErrorMessage = "No hemos podido cargar las fotos. Inténtalo de nuevo."
+        }
+    }
+
+    /// Añade una foto ya procesada al historial y la convierte en la principal.
+    ///
+    /// - Returns: `true` si la foto se guardó correctamente.
+    @discardableResult
+    func addPhoto(_ data: Data) async -> Bool {
+        guard !isAddingPhoto else { return false }
+
+        isAddingPhoto = true
+        photoErrorMessage = nil
+        defer { isAddingPhoto = false }
+
+        let photo = PlantPhoto(
+            plantID: plant.id,
+            addedAt: now(),
+            data: data
+        )
+
+        do {
+            try await repository.addPhoto(photo)
+
+            // La foto recién añadida es la más reciente.
+            photos.insert(photo, at: 0)
+            plant.photoData = data
+            return true
+        } catch {
+            photoErrorMessage = "No hemos podido guardar la foto. Inténtalo de nuevo."
             return false
         }
     }

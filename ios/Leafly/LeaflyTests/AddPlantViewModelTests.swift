@@ -172,6 +172,9 @@ private final class MockPlantRepository: PlantRepository {
         }
         savedPlants[index] = plant
     }
+
+    func fetchPhotos(for plantID: UUID) async throws -> [PlantPhoto] { [] }
+    func addPhoto(_ photo: PlantPhoto) async throws {}
 }
 
 private enum MockError: Error {

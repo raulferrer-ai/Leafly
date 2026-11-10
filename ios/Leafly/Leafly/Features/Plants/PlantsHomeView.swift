@@ -295,4 +295,6 @@ private final class PreviewPlantsRepository: PlantRepository {
 
     func add(_ plant: Plant) async throws {}
     func update(_ plant: Plant) async throws {}
+    func fetchPhotos(for plantID: UUID) async throws -> [PlantPhoto] { [] }
+    func addPhoto(_ photo: PlantPhoto) async throws {}
 }

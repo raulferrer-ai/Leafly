@@ -50,4 +50,42 @@ final class SwiftDataPlantRepository: PlantRepository {
 
         try context.save()
     }
+
+    func fetchPhotos(for plantID: UUID) async throws -> [PlantPhoto] {
+        let descriptor = FetchDescriptor<PlantEntity>(
+            predicate: #Predicate { $0.id == plantID }
+        )
+
+        guard let plant = try context.fetch(descriptor).first else {
+            return []
+        }
+
+        return plant.photos
+            .compactMap(\.domainModel)
+            .sorted { $0.addedAt > $1.addedAt }
+    }
+
+    func addPhoto(_ photo: PlantPhoto) async throws {
+        let plantID = photo.plantID
+        let descriptor = FetchDescriptor<PlantEntity>(
+            predicate: #Predicate { $0.id == plantID }
+        )
+
+        guard let plant = try context.fetch(descriptor).first else {
+            throw PlantRepositoryError.plantNotFound
+        }
+
+        let entity = PlantPhotoEntity(
+            id: photo.id,
+            addedAt: photo.addedAt,
+            photoData: photo.data,
+            plant: plant
+        )
+        context.insert(entity)
+
+        // La foto más reciente pasa a ser la imagen principal de la planta.
+        plant.photoData = photo.data
+
+        try context.save()
+    }
 }

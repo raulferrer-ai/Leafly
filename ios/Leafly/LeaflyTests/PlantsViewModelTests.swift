@@ -175,6 +175,9 @@ private final class MockPlantRepository: PlantRepository {
         }
         plants[index] = plant
     }
+
+    func fetchPhotos(for plantID: UUID) async throws -> [PlantPhoto] { [] }
+    func addPhoto(_ photo: PlantPhoto) async throws {}
 }
 
 @MainActor

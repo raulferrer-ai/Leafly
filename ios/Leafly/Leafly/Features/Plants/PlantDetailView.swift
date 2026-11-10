@@ -39,6 +39,7 @@ struct PlantDetailView: View {
                     header
                     statusCard
                     waterButton
+                    photoHistorySection
 
                     if let errorMessage = viewModel.errorMessage {
                         errorCard(message: errorMessage)
@@ -53,6 +54,9 @@ struct PlantDetailView: View {
         }
         .toolbar(.hidden, for: .navigationBar)
         .navigationBarBackButtonHidden(true)
+        .task {
+            await viewModel.loadPhotoHistory()
+        }
     }
 
     // MARK: - Cabecera
@@ -142,6 +146,24 @@ struct PlantDetailView: View {
         .accessibilityIdentifier("water-plant-button")
     }
 
+    // MARK: - Historial de fotos
+
+    private var photoHistorySection: some View {
+        PlantPhotoHistorySection(
+            photos: viewModel.photos,
+            isSaving: viewModel.isAddingPhoto,
+            onAddPhoto: { data in
+                let didAdd = await viewModel.addPhoto(data)
+
+                if didAdd {
+                    await onPlantUpdated(viewModel.plant)
+                }
+
+                return didAdd
+            }
+        )
+    }
+
     private func errorCard(message: String) -> some View {
         LeaflyCard {
             Text(message)
@@ -170,4 +192,6 @@ private final class PreviewPlantDetailRepository: PlantRepository {
     func fetchPlants() async throws -> [Plant] { [] }
     func add(_ plant: Plant) async throws {}
     func update(_ plant: Plant) async throws {}
+    func fetchPhotos(for plantID: UUID) async throws -> [PlantPhoto] { [] }
+    func addPhoto(_ photo: PlantPhoto) async throws {}
 }

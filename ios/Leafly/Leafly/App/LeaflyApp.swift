@@ -19,6 +19,10 @@ struct LeaflyApp: App {
         modelContainer = container
         plantRepository = SwiftDataPlantRepository(container: container)
         reminders = WateringReminderService()
+
+        #if DEBUG
+        UITestSeed.seedPhotoHistoryIfRequested(in: container)
+        #endif
     }
 
     var body: some Scene {

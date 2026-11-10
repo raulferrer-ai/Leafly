@@ -18,6 +18,9 @@ final class PlantEntity {
     var lastWateredAt: Date?
     /// Foto en JPEG. Se guarda fuera de la base de datos para mantenerla ligera.
     @Attribute(.externalStorage) var photoData: Data?
+    /// Historial de fotos. Al borrar la planta, sus fotos se borran con ella.
+    @Relationship(deleteRule: .cascade, inverse: \PlantPhotoEntity.plant)
+    var photos: [PlantPhotoEntity] = []
 
     init(
         id: UUID,

@@ -27,13 +27,21 @@ enum LeaflyModelContainer {
 
         do {
             let configuration = ModelConfiguration(isStoredInMemoryOnly: usesInMemoryStore)
-            return try ModelContainer(for: PlantEntity.self, configurations: configuration)
+            return try ModelContainer(
+                for: PlantEntity.self,
+                PlantPhotoEntity.self,
+                configurations: configuration
+            )
         } catch {
             assertionFailure("No se pudo abrir el almacén local: \(error)")
 
             do {
                 let fallback = ModelConfiguration(isStoredInMemoryOnly: true)
-                return try ModelContainer(for: PlantEntity.self, configurations: fallback)
+                return try ModelContainer(
+                    for: PlantEntity.self,
+                    PlantPhotoEntity.self,
+                    configurations: fallback
+                )
             } catch {
                 fatalError("No se pudo crear el almacén de datos de Leafly: \(error)")
             }

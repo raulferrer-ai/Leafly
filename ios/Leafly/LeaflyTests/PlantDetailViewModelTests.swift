@@ -176,6 +176,124 @@ final class PlantDetailViewModelTests: XCTestCase {
         XCTAssertFalse(viewModel.isSaving)
     }
 
+    // MARK: - Historial de fotos
+
+    func testLoadPhotoHistoryShowsNewestFirst() async {
+        let plant = Plant(name: "Monstera")
+        let older = PlantPhoto(
+            plantID: plant.id,
+            addedAt: date(daysAgo: 5, from: now),
+            data: Data([0x01])
+        )
+        let newest = PlantPhoto(plantID: plant.id, addedAt: now, data: Data([0x02]))
+        let repository = MockPlantDetailRepository(
+            plants: [plant],
+            photos: [older, newest]
+        )
+        let viewModel = makeViewModel(plant: plant, repository: repository)
+
+        await viewModel.loadPhotoHistory()
+
+        XCTAssertEqual(viewModel.photos.map(\.id), [newest.id, older.id])
+        XCTAssertNil(viewModel.photoErrorMessage)
+        XCTAssertFalse(viewModel.isLoadingPhotos)
+    }
+
+    func testLoadPhotoHistoryWithoutPhotosLeavesItEmpty() async {
+        let plant = Plant(name: "Nueva")
+        let viewModel = makeViewModel(plant: plant)
+
+        await viewModel.loadPhotoHistory()
+
+        XCTAssertTrue(viewModel.photos.isEmpty)
+        XCTAssertNil(viewModel.photoErrorMessage)
+    }
+
+    func testLoadPhotoHistoryFailureShowsCalmMessage() async {
+        let plant = Plant(name: "Monstera")
+        let repository = MockPlantDetailRepository(plants: [plant])
+        repository.fetchPhotosError = MockError.fetchPhotosFailed
+        let viewModel = makeViewModel(plant: plant, repository: repository)
+
+        await viewModel.loadPhotoHistory()
+
+        XCTAssertTrue(viewModel.photos.isEmpty)
+        XCTAssertEqual(
+            viewModel.photoErrorMessage,
+            "No hemos podido cargar las fotos. Inténtalo de nuevo."
+        )
+        XCTAssertFalse(viewModel.isLoadingPhotos)
+    }
+
+    func testAddPhotoPersistsItAndUpdatesTheMainPhoto() async {
+        let plant = Plant(name: "Monstera")
+        let repository = MockPlantDetailRepository(plants: [plant])
+        let viewModel = makeViewModel(plant: plant, repository: repository)
+        let photoData = Data([0x0A, 0x0B])
+
+        let didAdd = await viewModel.addPhoto(photoData)
+
+        XCTAssertTrue(didAdd)
+        XCTAssertEqual(viewModel.photos.count, 1)
+        XCTAssertEqual(viewModel.photos.first?.data, photoData)
+        XCTAssertEqual(viewModel.photos.first?.addedAt, now)
+        XCTAssertEqual(viewModel.plant.photoData, photoData)
+        XCTAssertEqual(repository.photosByPlant[plant.id]?.count, 1)
+        XCTAssertNil(viewModel.photoErrorMessage)
+        XCTAssertFalse(viewModel.isAddingPhoto)
+    }
+
+    func testAddingAPhotoKeepsTheExistingHistoryAndGoesFirst() async {
+        let plant = Plant(name: "Monstera")
+        let previous = PlantPhoto(
+            plantID: plant.id,
+            addedAt: date(daysAgo: 3, from: now),
+            data: Data([0x01])
+        )
+        let repository = MockPlantDetailRepository(
+            plants: [plant],
+            photos: [previous]
+        )
+        let viewModel = makeViewModel(plant: plant, repository: repository)
+        await viewModel.loadPhotoHistory()
+
+        let newPhotoData = Data([0x02])
+        await viewModel.addPhoto(newPhotoData)
+
+        XCTAssertEqual(viewModel.photos.count, 2)
+        XCTAssertEqual(viewModel.photos.first?.data, newPhotoData)
+        XCTAssertEqual(viewModel.photos.last?.id, previous.id)
+        XCTAssertEqual(viewModel.plant.photoData, newPhotoData)
+    }
+
+    func testAddPhotoFailureKeepsHistoryAndShowsMessage() async {
+        let plant = Plant(name: "Monstera")
+        let repository = MockPlantDetailRepository(plants: [plant])
+        repository.addPhotoError = MockError.addPhotoFailed
+        let viewModel = makeViewModel(plant: plant, repository: repository)
+
+        let didAdd = await viewModel.addPhoto(Data([0x0C]))
+
+        XCTAssertFalse(didAdd)
+        XCTAssertTrue(viewModel.photos.isEmpty)
+        XCTAssertNil(viewModel.plant.photoData)
+        XCTAssertEqual(
+            viewModel.photoErrorMessage,
+            "No hemos podido guardar la foto. Inténtalo de nuevo."
+        )
+        XCTAssertFalse(viewModel.isAddingPhoto)
+    }
+
+    func testMarkAsWateredKeepsThePhoto() async {
+        let photoData = Data([0x01, 0x02, 0x03])
+        let plant = Plant(name: "Ficus", photoData: photoData)
+        let viewModel = makeViewModel(plant: plant)
+
+        await viewModel.markAsWatered()
+
+        XCTAssertEqual(viewModel.plant.photoData, photoData)
+    }
+
     // MARK: - Helpers
 
     private func makeViewModel(
@@ -198,10 +316,17 @@ final class PlantDetailViewModelTests: XCTestCase {
 private final class MockPlantDetailRepository: PlantRepository {
     var plants: [Plant]
     private(set) var updatedPlants: [Plant] = []
+    private(set) var photosByPlant: [UUID: [PlantPhoto]] = [:]
     var updateError: Error?
+    var fetchPhotosError: Error?
+    var addPhotoError: Error?
 
-    init(plants: [Plant]) {
+    init(plants: [Plant], photos: [PlantPhoto] = []) {
         self.plants = plants
+
+        for photo in photos {
+            photosByPlant[photo.plantID, default: []].append(photo)
+        }
     }
 
     func fetchPlants() async throws -> [Plant] {
@@ -224,6 +349,22 @@ private final class MockPlantDetailRepository: PlantRepository {
         plants[index] = plant
         updatedPlants.append(plant)
     }
+
+    func fetchPhotos(for plantID: UUID) async throws -> [PlantPhoto] {
+        if let fetchPhotosError {
+            throw fetchPhotosError
+        }
+
+        return (photosByPlant[plantID] ?? []).sorted { $0.addedAt > $1.addedAt }
+    }
+
+    func addPhoto(_ photo: PlantPhoto) async throws {
+        if let addPhotoError {
+            throw addPhotoError
+        }
+
+        photosByPlant[photo.plantID, default: []].append(photo)
+    }
 }
 
 @MainActor
@@ -242,4 +383,6 @@ private final class MockDetailReminders: WateringReminderScheduling {
 
 private enum MockError: Error {
     case updateFailed
+    case fetchPhotosFailed
+    case addPhotoFailed
 }

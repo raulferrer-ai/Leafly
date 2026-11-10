@@ -135,6 +135,104 @@ final class SwiftDataPlantRepositoryTests: XCTestCase {
         }
     }
 
+    // MARK: - Historial de fotos
+
+    func testFetchPhotosWithoutHistoryReturnsEmpty() async throws {
+        let repository = try makeRepository()
+        let plant = Plant(name: "Sin fotos")
+        try await repository.add(plant)
+
+        let photos = try await repository.fetchPhotos(for: plant.id)
+
+        XCTAssertTrue(photos.isEmpty)
+    }
+
+    func testAddPhotoPersistsItAndUpdatesTheMainPhoto() async throws {
+        let repository = try makeRepository()
+        let plant = Plant(name: "Monstera")
+        try await repository.add(plant)
+
+        let addedAt = Date(timeIntervalSince1970: 1_900_000_000)
+        let photoData = Data([0xFF, 0xD8, 0xFF, 0xD9])
+        let photo = PlantPhoto(
+            plantID: plant.id,
+            addedAt: addedAt,
+            data: photoData
+        )
+        try await repository.addPhoto(photo)
+
+        let photos = try await repository.fetchPhotos(for: plant.id)
+        XCTAssertEqual(photos.count, 1)
+        XCTAssertEqual(photos.first?.id, photo.id)
+        XCTAssertEqual(photos.first?.addedAt, addedAt)
+        XCTAssertEqual(photos.first?.data, photoData)
+
+        let plants = try await repository.fetchPlants()
+        XCTAssertEqual(plants.first?.photoData, photoData)
+    }
+
+    func testPhotosAreReturnedNewestFirst() async throws {
+        let repository = try makeRepository()
+        let plant = Plant(name: "Monstera")
+        try await repository.add(plant)
+
+        let older = PlantPhoto(
+            plantID: plant.id,
+            addedAt: Date(timeIntervalSince1970: 1_000),
+            data: Data([0x01])
+        )
+        let newest = PlantPhoto(
+            plantID: plant.id,
+            addedAt: Date(timeIntervalSince1970: 2_000),
+            data: Data([0x02])
+        )
+
+        try await repository.addPhoto(older)
+        try await repository.addPhoto(newest)
+
+        let photos = try await repository.fetchPhotos(for: plant.id)
+        XCTAssertEqual(photos.map(\.id), [newest.id, older.id])
+    }
+
+    func testAddPhotoToUnknownPlantThrows() async throws {
+        let repository = try makeRepository()
+        let photo = PlantPhoto(
+            plantID: UUID(),
+            data: Data([0x01])
+        )
+
+        do {
+            try await repository.addPhoto(photo)
+            XCTFail("Se esperaba un error al añadir una foto a una planta inexistente")
+        } catch {
+            XCTAssertEqual(error as? PlantRepositoryError, .plantNotFound)
+        }
+    }
+
+    func testUpdatingAPlantKeepsItsPhotoHistory() async throws {
+        let repository = try makeRepository()
+        let plant = Plant(name: "Monstera")
+        try await repository.add(plant)
+
+        let photo = PlantPhoto(
+            plantID: plant.id,
+            addedAt: Date(timeIntervalSince1970: 1_500),
+            data: Data([0x0A])
+        )
+        try await repository.addPhoto(photo)
+
+        var watered = plant
+        watered.photoData = photo.data
+        watered.lastWateredAt = Date(timeIntervalSince1970: 2_500)
+        try await repository.update(watered)
+
+        let photos = try await repository.fetchPhotos(for: plant.id)
+        XCTAssertEqual(photos.map(\.id), [photo.id])
+
+        let plants = try await repository.fetchPlants()
+        XCTAssertEqual(plants.first?.photoData, photo.data)
+    }
+
     // MARK: - Helpers
 
     private func makeRepository() throws -> SwiftDataPlantRepository {
@@ -142,7 +240,11 @@ final class SwiftDataPlantRepositoryTests: XCTestCase {
             "LeaflyTests-\(UUID().uuidString)",
             isStoredInMemoryOnly: true
         )
-        let container = try ModelContainer(for: PlantEntity.self, configurations: configuration)
+        let container = try ModelContainer(
+            for: PlantEntity.self,
+            PlantPhotoEntity.self,
+            configurations: configuration
+        )
         return SwiftDataPlantRepository(container: container)
     }
 }
