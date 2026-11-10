@@ -122,6 +122,17 @@ private final class MockPlantRepository: PlantRepository {
         }
         savedPlants.append(plant)
     }
+
+    func update(_ plant: Plant) async throws {
+        if let errorToThrow {
+            throw errorToThrow
+        }
+
+        guard let index = savedPlants.firstIndex(where: { $0.id == plant.id }) else {
+            throw PlantRepositoryError.plantNotFound
+        }
+        savedPlants[index] = plant
+    }
 }
 
 private enum MockError: Error {

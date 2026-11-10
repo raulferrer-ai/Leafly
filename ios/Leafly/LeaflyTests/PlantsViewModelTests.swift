@@ -66,6 +66,30 @@ final class PlantsViewModelTests: XCTestCase {
         XCTAssertNil(viewModel.errorMessage)
         XCTAssertEqual(viewModel.plants.map(\.name), ["Orquídea"])
     }
+
+    func testReplaceReflectsAPlantUpdatedInTheDetail() async {
+        let plant = Plant(name: "Monstera", type: .monstera)
+        let viewModel = PlantsViewModel(repository: MockPlantRepository(plants: [plant]))
+        await viewModel.load()
+
+        var wateredPlant = plant
+        wateredPlant.lastWateredAt = .now
+        viewModel.replace(wateredPlant)
+
+        XCTAssertEqual(viewModel.plants.first?.lastWateredAt, wateredPlant.lastWateredAt)
+        XCTAssertEqual(viewModel.plants.first?.name, "Monstera")
+    }
+
+    func testReplaceIgnoresUnknownPlants() async {
+        let viewModel = PlantsViewModel(
+            repository: MockPlantRepository(plants: [Plant(name: "Monstera")])
+        )
+        await viewModel.load()
+
+        viewModel.replace(Plant(name: "Otra"))
+
+        XCTAssertEqual(viewModel.plants.map(\.name), ["Monstera"])
+    }
 }
 
 // MARK: - Dobles de prueba
@@ -88,6 +112,13 @@ private final class MockPlantRepository: PlantRepository {
 
     func add(_ plant: Plant) async throws {
         plants.append(plant)
+    }
+
+    func update(_ plant: Plant) async throws {
+        guard let index = plants.firstIndex(where: { $0.id == plant.id }) else {
+            throw PlantRepositoryError.plantNotFound
+        }
+        plants[index] = plant
     }
 }
 

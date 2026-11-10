@@ -39,7 +39,13 @@ struct PlantsHomeView: View {
             }
             .toolbar(.hidden, for: .navigationBar)
             .navigationDestination(for: Plant.self) { plant in
-                PlantDetailPlaceholderView(plant: plant)
+                PlantDetailView(
+                    plant: plant,
+                    repository: repository,
+                    onPlantUpdated: { updatedPlant in
+                        viewModel.replace(updatedPlant)
+                    }
+                )
             }
             .sheet(isPresented: $isShowingAddPlant) {
                 addPlantSheet
@@ -287,4 +293,5 @@ private final class PreviewPlantsRepository: PlantRepository {
     }
 
     func add(_ plant: Plant) async throws {}
+    func update(_ plant: Plant) async throws {}
 }

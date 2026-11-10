@@ -321,4 +321,5 @@ struct AddPlantView: View {
 private final class PreviewPlantRepository: PlantRepository {
     func fetchPlants() async throws -> [Plant] { [] }
     func add(_ plant: Plant) async throws {}
+    func update(_ plant: Plant) async throws {}
 }

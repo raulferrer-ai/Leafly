@@ -35,4 +35,10 @@ final class PlantsViewModel {
             errorMessage = "No hemos podido cargar tus plantas. Inténtalo de nuevo."
         }
     }
+
+    /// Refleja al instante una planta que cambió en el detalle, sin recargar.
+    func replace(_ plant: Plant) {
+        guard let index = plants.firstIndex(where: { $0.id == plant.id }) else { return }
+        plants[index] = plant
+    }
 }

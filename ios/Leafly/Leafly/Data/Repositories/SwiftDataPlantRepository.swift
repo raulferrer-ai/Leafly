@@ -31,4 +31,22 @@ final class SwiftDataPlantRepository: PlantRepository {
         context.insert(PlantEntity(plant: plant))
         try context.save()
     }
+
+    func update(_ plant: Plant) async throws {
+        let plantID = plant.id
+        let descriptor = FetchDescriptor<PlantEntity>(
+            predicate: #Predicate { $0.id == plantID }
+        )
+
+        guard let entity = try context.fetch(descriptor).first else {
+            throw PlantRepositoryError.plantNotFound
+        }
+
+        entity.name = plant.name
+        entity.typeRawValue = plant.type?.rawValue
+        entity.createdAt = plant.createdAt
+        entity.lastWateredAt = plant.lastWateredAt
+
+        try context.save()
+    }
 }

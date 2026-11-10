@@ -77,6 +77,34 @@ final class SwiftDataPlantRepositoryTests: XCTestCase {
         XCTAssertNil(plants.first?.lastWateredAt)
     }
 
+    func testUpdatePersistsLastWateredDate() async throws {
+        let repository = try makeRepository()
+        let plant = Plant(name: "Monstera", type: .monstera)
+        try await repository.add(plant)
+
+        let wateredAt = Date(timeIntervalSince1970: 1_900_000_000)
+        var wateredPlant = plant
+        wateredPlant.lastWateredAt = wateredAt
+        try await repository.update(wateredPlant)
+
+        let plants = try await repository.fetchPlants()
+        XCTAssertEqual(plants.count, 1)
+        XCTAssertEqual(plants.first?.lastWateredAt, wateredAt)
+        XCTAssertEqual(plants.first?.name, "Monstera")
+        XCTAssertEqual(plants.first?.type, .monstera)
+    }
+
+    func testUpdateUnknownPlantThrows() async throws {
+        let repository = try makeRepository()
+
+        do {
+            try await repository.update(Plant(name: "Fantasma"))
+            XCTFail("Se esperaba un error al actualizar una planta inexistente")
+        } catch {
+            XCTAssertEqual(error as? PlantRepositoryError, .plantNotFound)
+        }
+    }
+
     // MARK: - Helpers
 
     private func makeRepository() throws -> SwiftDataPlantRepository {

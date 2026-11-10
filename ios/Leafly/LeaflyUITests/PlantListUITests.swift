@@ -31,6 +31,32 @@ final class PlantListUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Mis plantas"].waitForExistence(timeout: 5))
     }
 
+    func testMarkingAsWateredUpdatesDetailAndList() throws {
+        let app = launchAppWithFirstPlant(named: "Monstera")
+
+        let card = app.buttons["plant-card-Monstera"]
+        XCTAssertTrue(card.waitForExistence(timeout: 10))
+        XCTAssertTrue(card.label.contains("Añadida hoy"))
+
+        card.tap()
+
+        XCTAssertTrue(app.staticTexts["plant-detail-title"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["Añadida hoy"].waitForExistence(timeout: 5))
+
+        let waterButton = app.buttons["water-plant-button"]
+        XCTAssertTrue(waterButton.waitForExistence(timeout: 5))
+        waterButton.tap()
+
+        XCTAssertTrue(app.staticTexts["Regada hoy"].waitForExistence(timeout: 5))
+
+        app.buttons["Volver a mis plantas"].tap()
+
+        let updatedCard = app.buttons["plant-card-Monstera"]
+        XCTAssertTrue(updatedCard.waitForExistence(timeout: 5))
+        XCTAssertTrue(updatedCard.label.contains("Regada hoy"))
+        XCTAssertTrue(updatedCard.label.contains("Al día"))
+    }
+
     func testAddingAnotherPlantFromTheList() throws {
         let app = launchAppWithFirstPlant(named: "Monstera")
 
