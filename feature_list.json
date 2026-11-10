@@ -2,7 +2,7 @@
     {
         "id": "onboarding-first-plant",
         "title": "Onboarding y añadir la primera planta",
-        "status": "in_progress",
+        "status": "done",
         "platforms": [
             "ios",
             "android"

@@ -1,0 +1,35 @@
+<resources>
+    <string name="app_name">Leafly</string>
+
+    <!-- Bienvenida -->
+    <string name="onboarding_welcome_eyebrow">BIENVENIDO A LEAFLY</string>
+    <string name="onboarding_welcome_title">Tu jardín,\ncon calma</string>
+    <string name="onboarding_welcome_subtitle">Un lugar tranquilo para cuidar tus plantas, día a día.</string>
+    <string name="onboarding_benefit_title">Riegos, cuidados y recuerdos</string>
+    <string name="onboarding_benefit_subtitle">Lo esencial para que crezca sana, sin complicarte.</string>
+    <string name="onboarding_add_first_plant">Añadir mi primera planta</string>
+    <string name="onboarding_cta_footnote">Solo necesitas un nombre. El resto puede esperar.</string>
+
+    <!-- Añadir planta -->
+    <string name="add_plant_eyebrow">PRIMERA PLANTA</string>
+    <string name="add_plant_title">Añade tu primera planta</string>
+    <string name="add_plant_subtitle">Con un nombre es suficiente. Puedes completar el resto más adelante.</string>
+    <string name="add_plant_name_title">¿Cómo se llama?</string>
+    <string name="add_plant_name_subtitle">Su nombre, como tú la llamas.</string>
+    <string name="add_plant_name_placeholder">Por ejemplo, Monstera</string>
+    <string name="add_plant_type_title">¿Qué tipo de planta es?</string>
+    <string name="add_plant_optional">Opcional</string>
+    <string name="add_plant_type_none">Sin especificar</string>
+    <string name="add_plant_save">Guardar planta</string>
+    <string name="add_plant_saving">Guardando...</string>
+    <string name="add_plant_cancel">Cancelar y volver a la bienvenida</string>
+    <string name="error_name_required">Ponle un nombre a tu planta para poder guardarla.</string>
+    <string name="error_save_failed">No hemos podido guardar tu planta. Inténtalo de nuevo.</string>
+
+    <!-- Mis plantas -->
+    <string name="plants_eyebrow">TU JARDÍN</string>
+    <string name="plants_title">Mis plantas</string>
+    <string name="plants_subtitle_one">Una planta a tu cuidado.</string>
+    <string name="plants_subtitle_many">%1$d plantas a tu cuidado.</string>
+    <string name="plant_added_on">Añadida el %1$s</string>
+</resources>
