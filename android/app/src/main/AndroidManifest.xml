@@ -2,6 +2,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- Android 13+ pide permiso en tiempo de ejecución para mostrar notificaciones. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
     <application
         android:name=".LeaflyApplication"
         android:allowBackup="true"
@@ -23,6 +26,11 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- Recibe las alarmas de riego y muestra la notificación local. -->
+        <receiver
+            android:name=".data.notifications.WateringReminderReceiver"
+            android:exported="false" />
     </application>
 
 </manifest>

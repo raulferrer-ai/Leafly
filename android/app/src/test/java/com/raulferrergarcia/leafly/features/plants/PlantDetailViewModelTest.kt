@@ -5,6 +5,8 @@ import com.raulferrergarcia.leafly.domain.model.Plant
 import com.raulferrergarcia.leafly.domain.model.PlantType
 import com.raulferrergarcia.leafly.domain.repository.PlantNotFoundException
 import com.raulferrergarcia.leafly.domain.repository.PlantRepository
+import com.raulferrergarcia.leafly.domain.scheduling.WateringReminderScheduling
+import com.raulferrergarcia.leafly.domain.usecase.CancelWateringReminderUseCase
 import com.raulferrergarcia.leafly.domain.usecase.MarkPlantWateredUseCase
 import java.io.IOException
 import kotlinx.coroutines.CompletableDeferred
@@ -45,9 +47,11 @@ class PlantDetailViewModelTest {
         plant: Plant,
         repository: FakeDetailPlantRepository = FakeDetailPlantRepository(listOf(plant)),
         clock: () -> Long = { now },
+        reminders: FakeDetailWateringReminders = FakeDetailWateringReminders(),
     ): PlantDetailViewModel = PlantDetailViewModel(
         plant = plant,
         markPlantWatered = MarkPlantWateredUseCase(repository, clock),
+        cancelWateringReminder = CancelWateringReminderUseCase(reminders),
     )
 
     @Test
@@ -90,6 +94,29 @@ class PlantDetailViewModelTest {
         val saved = repository.plantsFlow.value.single()
         assertEquals(plant.id, saved.id)
         assertEquals(now, saved.lastWateredAt)
+    }
+
+    @Test
+    fun `marking as watered cancels the plant reminder`() = runTest(dispatcher) {
+        val plant = Plant(name = "Monstera", lastWateredAt = now - 8 * DAY_MILLIS)
+        val reminders = FakeDetailWateringReminders()
+        val viewModel = createViewModel(plant, reminders = reminders)
+
+        viewModel.markAsWatered()
+
+        assertEquals(listOf(plant.id), reminders.cancelledPlantIds)
+    }
+
+    @Test
+    fun `a save failure keeps the reminder`() = runTest(dispatcher) {
+        val plant = Plant(name = "Monstera", lastWateredAt = now - 8 * DAY_MILLIS)
+        val repository = FakeDetailPlantRepository(listOf(plant)).apply { failOnUpdate = true }
+        val reminders = FakeDetailWateringReminders()
+        val viewModel = createViewModel(plant, repository, reminders = reminders)
+
+        viewModel.markAsWatered()
+
+        assertTrue(reminders.cancelledPlantIds.isEmpty())
     }
 
     @Test
@@ -154,6 +181,20 @@ class PlantDetailViewModelTest {
 
     private companion object {
         const val DAY_MILLIS = 24L * 60 * 60 * 1000
+    }
+}
+
+private class FakeDetailWateringReminders : WateringReminderScheduling {
+
+    val syncedPlants = mutableListOf<List<Plant>>()
+    val cancelledPlantIds = mutableListOf<String>()
+
+    override suspend fun sync(plants: List<Plant>) {
+        syncedPlants.add(plants)
+    }
+
+    override suspend fun cancelReminder(plantId: String) {
+        cancelledPlantIds.add(plantId)
     }
 }
 

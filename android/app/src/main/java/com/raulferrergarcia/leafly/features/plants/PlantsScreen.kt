@@ -66,8 +66,10 @@ import com.raulferrergarcia.leafly.domain.model.Plant
 import com.raulferrergarcia.leafly.domain.model.PlantType
 import com.raulferrergarcia.leafly.domain.model.wateringStatus
 import com.raulferrergarcia.leafly.domain.usecase.AddPlantUseCase
+import com.raulferrergarcia.leafly.domain.usecase.CancelWateringReminderUseCase
 import com.raulferrergarcia.leafly.domain.usecase.MarkPlantWateredUseCase
 import com.raulferrergarcia.leafly.domain.usecase.ObservePlantsUseCase
+import com.raulferrergarcia.leafly.domain.usecase.SyncWateringRemindersUseCase
 import com.raulferrergarcia.leafly.features.onboarding.AddPlantMode
 import com.raulferrergarcia.leafly.features.onboarding.AddPlantScreen
 import com.raulferrergarcia.leafly.features.onboarding.AddPlantViewModel
@@ -82,13 +84,20 @@ fun PlantsScreen(
     observePlants: ObservePlantsUseCase,
     addPlant: AddPlantUseCase,
     markPlantWatered: MarkPlantWateredUseCase,
+    syncWateringReminders: SyncWateringRemindersUseCase,
+    cancelWateringReminder: CancelWateringReminderUseCase,
     modifier: Modifier = Modifier,
 ) {
     val plantsViewModel: PlantsViewModel = viewModel(
-        factory = PlantsViewModel.factory(observePlants),
+        factory = PlantsViewModel.factory(
+            observePlants = observePlants,
+            syncWateringReminders = syncWateringReminders,
+        ),
     )
     val uiState by plantsViewModel.uiState.collectAsStateWithLifecycle()
     val navController = rememberNavController()
+
+    RequestWateringNotificationPermission(plants = uiState.plants)
 
     NavHost(
         navController = navController,
@@ -132,6 +141,7 @@ fun PlantsScreen(
                     factory = PlantDetailViewModel.factory(
                         plant = plant,
                         markPlantWatered = markPlantWatered,
+                        cancelWateringReminder = cancelWateringReminder,
                     ),
                 )
 

@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.raulferrergarcia.leafly.domain.model.Plant
+import com.raulferrergarcia.leafly.domain.usecase.CancelWateringReminderUseCase
 import com.raulferrergarcia.leafly.domain.usecase.MarkPlantWateredUseCase
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -22,6 +23,7 @@ import kotlinx.coroutines.launch
 class PlantDetailViewModel(
     plant: Plant,
     private val markPlantWatered: MarkPlantWateredUseCase,
+    private val cancelWateringReminder: CancelWateringReminderUseCase,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(PlantDetailUiState(plant = plant))
@@ -38,6 +40,10 @@ class PlantDetailViewModel(
         viewModelScope.launch {
             try {
                 val wateredPlant = markPlantWatered(current.plant)
+
+                // Ya está al día: su recordatorio pendiente deja de tener sentido.
+                cancelWateringReminder(wateredPlant.id)
+
                 _uiState.update { state ->
                     state.copy(plant = wateredPlant, isSaving = false)
                 }
@@ -55,8 +61,15 @@ class PlantDetailViewModel(
         fun factory(
             plant: Plant,
             markPlantWatered: MarkPlantWateredUseCase,
+            cancelWateringReminder: CancelWateringReminderUseCase,
         ) = viewModelFactory {
-            initializer { PlantDetailViewModel(plant, markPlantWatered) }
+            initializer {
+                PlantDetailViewModel(
+                    plant = plant,
+                    markPlantWatered = markPlantWatered,
+                    cancelWateringReminder = cancelWateringReminder,
+                )
+            }
         }
     }
 }

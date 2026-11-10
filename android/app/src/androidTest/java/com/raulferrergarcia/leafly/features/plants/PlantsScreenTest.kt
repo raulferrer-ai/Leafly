@@ -10,9 +10,12 @@ import com.raulferrergarcia.leafly.designsystem.LeaflyTheme
 import com.raulferrergarcia.leafly.domain.model.Plant
 import com.raulferrergarcia.leafly.domain.repository.PlantNotFoundException
 import com.raulferrergarcia.leafly.domain.repository.PlantRepository
+import com.raulferrergarcia.leafly.domain.scheduling.WateringReminderScheduling
 import com.raulferrergarcia.leafly.domain.usecase.AddPlantUseCase
+import com.raulferrergarcia.leafly.domain.usecase.CancelWateringReminderUseCase
 import com.raulferrergarcia.leafly.domain.usecase.MarkPlantWateredUseCase
 import com.raulferrergarcia.leafly.domain.usecase.ObservePlantsUseCase
+import com.raulferrergarcia.leafly.domain.usecase.SyncWateringRemindersUseCase
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
@@ -100,16 +103,26 @@ class PlantsScreenTest {
     }
 
     private fun setPlantsContent(repository: FakePlantRepository) {
+        val reminders = FakeWateringReminderScheduling()
         composeRule.setContent {
             LeaflyTheme {
                 PlantsScreen(
                     observePlants = ObservePlantsUseCase(repository),
                     addPlant = AddPlantUseCase(repository),
                     markPlantWatered = MarkPlantWateredUseCase(repository),
+                    syncWateringReminders = SyncWateringRemindersUseCase(reminders),
+                    cancelWateringReminder = CancelWateringReminderUseCase(reminders),
                 )
             }
         }
     }
+}
+
+private class FakeWateringReminderScheduling : WateringReminderScheduling {
+
+    override suspend fun sync(plants: List<Plant>) = Unit
+
+    override suspend fun cancelReminder(plantId: String) = Unit
 }
 
 private class FakePlantRepository(

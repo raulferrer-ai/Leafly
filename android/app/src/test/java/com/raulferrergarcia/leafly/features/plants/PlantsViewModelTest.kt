@@ -4,7 +4,9 @@ import app.cash.turbine.test
 import com.raulferrergarcia.leafly.domain.model.Plant
 import com.raulferrergarcia.leafly.domain.repository.PlantNotFoundException
 import com.raulferrergarcia.leafly.domain.repository.PlantRepository
+import com.raulferrergarcia.leafly.domain.scheduling.WateringReminderScheduling
 import com.raulferrergarcia.leafly.domain.usecase.ObservePlantsUseCase
+import com.raulferrergarcia.leafly.domain.usecase.SyncWateringRemindersUseCase
 import java.io.IOException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -39,8 +41,13 @@ class PlantsViewModelTest {
         Dispatchers.resetMain()
     }
 
-    private fun createViewModel(repository: FakePlantRepository): PlantsViewModel =
-        PlantsViewModel(ObservePlantsUseCase(repository))
+    private fun createViewModel(
+        repository: FakePlantRepository,
+        reminders: FakeWateringReminderScheduling = FakeWateringReminderScheduling(),
+    ): PlantsViewModel = PlantsViewModel(
+        observePlants = ObservePlantsUseCase(repository),
+        syncWateringReminders = SyncWateringRemindersUseCase(reminders),
+    )
 
     @Test
     fun `shows the plants from the repository`() = runTest(dispatcher) {
@@ -100,6 +107,46 @@ class PlantsViewModelTest {
     }
 
     @Test
+    fun `synchronizes watering reminders with the plants`() = runTest(dispatcher) {
+        val plants = listOf(Plant(name = "Monstera"), Plant(name = "Ficus"))
+        val reminders = FakeWateringReminderScheduling()
+        val viewModel = createViewModel(
+            repository = FakePlantRepository(initial = plants),
+            reminders = reminders,
+        )
+
+        viewModel.uiState.test {
+            var state = awaitItem()
+            while (state.isLoading) {
+                state = awaitItem()
+            }
+
+            assertEquals(plants, reminders.syncedPlants.last())
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `a reminder failure does not break the list`() = runTest(dispatcher) {
+        val reminders = FakeWateringReminderScheduling().apply { failOnSync = true }
+        val viewModel = createViewModel(
+            repository = FakePlantRepository(initial = listOf(Plant(name = "Ficus"))),
+            reminders = reminders,
+        )
+
+        viewModel.uiState.test {
+            var state = awaitItem()
+            while (state.isLoading) {
+                state = awaitItem()
+            }
+
+            assertEquals("Ficus", state.plants.single().name)
+            assertNull(state.loadError)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
     fun `retry recovers after a failure`() = runTest(dispatcher) {
         val repository = FakePlantRepository(failOnObserve = true)
         val viewModel = createViewModel(repository)
@@ -130,6 +177,22 @@ class PlantsViewModelTest {
 /**
  * Repositorio en memoria para los tests del ViewModel.
  */
+private class FakeWateringReminderScheduling : WateringReminderScheduling {
+
+    val syncedPlants = mutableListOf<List<Plant>>()
+    val cancelledPlantIds = mutableListOf<String>()
+    var failOnSync: Boolean = false
+
+    override suspend fun sync(plants: List<Plant>) {
+        if (failOnSync) throw IOException("No se pudieron programar los recordatorios")
+        syncedPlants.add(plants)
+    }
+
+    override suspend fun cancelReminder(plantId: String) {
+        cancelledPlantIds.add(plantId)
+    }
+}
+
 private class FakePlantRepository(
     initial: List<Plant> = emptyList(),
     var failOnObserve: Boolean = false,

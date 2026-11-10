@@ -35,7 +35,7 @@
     {
         "id": "watering-reminders",
         "title": "Recordatorios locales de riego",
-        "status": "in_progress",
+        "status": "done",
         "platforms": [
             "ios",
             "android"

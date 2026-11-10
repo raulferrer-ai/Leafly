@@ -53,6 +53,14 @@
     <string name="watering_status_soon">Riega pronto</string>
     <string name="watering_status_now">Necesita agua</string>
 
+    <!-- Recordatorios de riego -->
+    <string name="watering_channel_name">Recordatorios de riego</string>
+    <string name="watering_channel_description">Avisos calmados cuando una planta necesita agua.</string>
+    <string name="watering_reminder_soon_title">Un poco de agua para %1$s</string>
+    <string name="watering_reminder_soon_body">Riega pronto a %1$s para que siga creciendo con calma.</string>
+    <string name="watering_reminder_now_title">%1$s necesita agua</string>
+    <string name="watering_reminder_now_body">Un riego ahora ayudará a %1$s a volver a estar al día.</string>
+
     <!-- Detalle de planta -->
     <string name="plant_detail_eyebrow">TU PLANTA</string>
     <string name="plant_detail_back">Volver a mis plantas</string>
