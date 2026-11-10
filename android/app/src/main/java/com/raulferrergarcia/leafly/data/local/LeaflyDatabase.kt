@@ -6,8 +6,8 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
-    entities = [PlantEntity::class],
-    version = 3,
+    entities = [PlantEntity::class, PlantPhotoEntity::class],
+    version = 4,
     exportSchema = false,
 )
 abstract class LeaflyDatabase : RoomDatabase() {
@@ -29,6 +29,28 @@ abstract class LeaflyDatabase : RoomDatabase() {
         val MIGRATION_2_3 = object : Migration(2, 3) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE plants ADD COLUMN photoData BLOB")
+            }
+        }
+
+        /**
+         * Crea la tabla de historial de fotos de las plantas.
+         */
+        val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS plant_photos (
+                        id TEXT NOT NULL,
+                        plantId TEXT NOT NULL,
+                        addedAt INTEGER NOT NULL,
+                        photoData BLOB NOT NULL,
+                        PRIMARY KEY (id),
+                        FOREIGN KEY (plantId) REFERENCES plants (id) ON DELETE CASCADE
+                    )
+                    """.trimIndent(),
+                )
+                db.execSQL("CREATE INDEX IF NOT EXISTS idx_plant_photos_plantId ON plant_photos (plantId)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS idx_plant_photos_addedAt ON plant_photos (addedAt)")
             }
         }
     }

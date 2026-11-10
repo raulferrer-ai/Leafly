@@ -2,6 +2,7 @@ package com.raulferrergarcia.leafly.features.plants
 
 import app.cash.turbine.test
 import com.raulferrergarcia.leafly.domain.model.Plant
+import com.raulferrergarcia.leafly.domain.model.PlantPhoto
 import com.raulferrergarcia.leafly.domain.repository.PlantNotFoundException
 import com.raulferrergarcia.leafly.domain.repository.PlantRepository
 import com.raulferrergarcia.leafly.domain.scheduling.WateringReminderScheduling
@@ -220,4 +221,9 @@ private class FakePlantRepository(
             current.toMutableList().apply { this[index] = plant }
         }
     }
+
+    override fun observePhotos(plantId: String): Flow<List<PlantPhoto>> =
+        flow<List<PlantPhoto>> { emptyList<PlantPhoto>() }
+
+    override suspend fun addPhoto(photo: PlantPhoto) {}
 }

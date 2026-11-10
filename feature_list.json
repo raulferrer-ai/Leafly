@@ -57,7 +57,7 @@
     {
         "id": "plant-photo-history",
         "title": "Historial visual de fotos de la planta",
-        "status": "in_progress",
+        "status": "done",
         "platforms": [
             "ios",
             "android"

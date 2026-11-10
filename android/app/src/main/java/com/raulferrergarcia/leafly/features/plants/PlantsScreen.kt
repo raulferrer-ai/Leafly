@@ -65,6 +65,7 @@ import com.raulferrergarcia.leafly.designsystem.statusIcon
 import com.raulferrergarcia.leafly.domain.model.Plant
 import com.raulferrergarcia.leafly.domain.model.PlantType
 import com.raulferrergarcia.leafly.domain.model.wateringStatus
+import com.raulferrergarcia.leafly.domain.repository.PlantRepository
 import com.raulferrergarcia.leafly.domain.usecase.AddPlantUseCase
 import com.raulferrergarcia.leafly.domain.usecase.CancelWateringReminderUseCase
 import com.raulferrergarcia.leafly.domain.usecase.MarkPlantWateredUseCase
@@ -86,6 +87,7 @@ fun PlantsScreen(
     markPlantWatered: MarkPlantWateredUseCase,
     syncWateringReminders: SyncWateringRemindersUseCase,
     cancelWateringReminder: CancelWateringReminderUseCase,
+    plantRepository: PlantRepository,
     modifier: Modifier = Modifier,
 ) {
     val plantsViewModel: PlantsViewModel = viewModel(
@@ -140,6 +142,7 @@ fun PlantsScreen(
                     key = plant.id,
                     factory = PlantDetailViewModel.factory(
                         plant = plant,
+                        repository = plantRepository,
                         markPlantWatered = markPlantWatered,
                         cancelWateringReminder = cancelWateringReminder,
                     ),
@@ -148,6 +151,9 @@ fun PlantsScreen(
                 PlantDetailScreen(
                     viewModel = detailViewModel,
                     onBack = { navController.popBackStack() },
+                    onAddPhoto = { data ->
+                        detailViewModel.addPhoto(data)
+                    },
                 )
             } else {
                 MissingPlantContent(

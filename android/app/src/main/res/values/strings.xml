@@ -80,6 +80,20 @@
     <string name="plant_detail_water_action">Ya la regué</string>
     <string name="plant_detail_save_error">No hemos podido guardar el riego. Inténtalo de nuevo.</string>
 
+    <!-- Historial de fotos -->
+    <string name="plant_photo_history_title">Su historia</string>
+    <string name="plant_photo_history_subtitle">Las fotos que guardes quedarán aquí, de la más reciente a la más antigua.</string>
+    <string name="plant_photo_history_empty_title">Aún no hay fotos</string>
+    <string name="plant_photo_history_empty_subtitle">Cuando quieras, guarda una foto y podrás ver cómo crece con el tiempo.</string>
+    <string name="plant_photo_history_add_first">Añadir la primera foto</string>
+    <string name="plant_photo_history_add_another">Añadir otra foto</string>
+    <string name="plant_photo_history_processing">Preparando la foto...</string>
+    <string name="plant_photo_history_dialog_title">Añadir una foto</string>
+    <string name="plant_photo_history_dialog_subtitle">Elige cómo quieres guardar este momento.</string>
+    <string name="plant_photo_history_camera">Hacer una foto</string>
+    <string name="plant_photo_history_gallery">Elegir de la galería</string>
+    <string name="plant_photo_history_item_description">Foto añadida el %1$s</string>
+
     <!-- Añadir planta desde la lista -->
     <string name="add_plant_another_eyebrow">NUEVA PLANTA</string>
     <string name="add_plant_another_title">Añade una planta</string>

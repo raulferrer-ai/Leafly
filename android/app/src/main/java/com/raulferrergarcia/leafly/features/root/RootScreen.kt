@@ -8,6 +8,7 @@ import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.raulferrergarcia.leafly.designsystem.LeaflyScreen
+import com.raulferrergarcia.leafly.domain.repository.PlantRepository
 import com.raulferrergarcia.leafly.domain.usecase.AddPlantUseCase
 import com.raulferrergarcia.leafly.domain.usecase.CancelWateringReminderUseCase
 import com.raulferrergarcia.leafly.domain.usecase.MarkPlantWateredUseCase
@@ -27,6 +28,7 @@ fun LeaflyRoot(
     markPlantWatered: MarkPlantWateredUseCase,
     syncWateringReminders: SyncWateringRemindersUseCase,
     cancelWateringReminder: CancelWateringReminderUseCase,
+    plantRepository: PlantRepository,
     modifier: Modifier = Modifier,
 ) {
     val rootViewModel: RootViewModel = viewModel(
@@ -49,6 +51,7 @@ fun LeaflyRoot(
                 markPlantWatered = markPlantWatered,
                 syncWateringReminders = syncWateringReminders,
                 cancelWateringReminder = cancelWateringReminder,
+                plantRepository = plantRepository,
             )
         }
     }

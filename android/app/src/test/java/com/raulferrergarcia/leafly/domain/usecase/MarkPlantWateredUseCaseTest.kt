@@ -1,12 +1,14 @@
 package com.raulferrergarcia.leafly.domain.usecase
 
 import com.raulferrergarcia.leafly.domain.model.Plant
+import com.raulferrergarcia.leafly.domain.model.PlantPhoto
 import com.raulferrergarcia.leafly.domain.model.PlantType
 import com.raulferrergarcia.leafly.domain.repository.PlantNotFoundException
 import com.raulferrergarcia.leafly.domain.repository.PlantRepository
 import java.io.IOException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -125,4 +127,9 @@ private class FakePlantRepository(
             current.toMutableList().apply { this[index] = plant }
         }
     }
+
+    override fun observePhotos(plantId: String): Flow<List<PlantPhoto>> =
+        flow<List<PlantPhoto>> { emptyList<PlantPhoto>() }
+
+    override suspend fun addPhoto(photo: PlantPhoto) {}
 }

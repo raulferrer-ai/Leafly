@@ -26,7 +26,7 @@ class AppContainer(context: Context) {
         LeaflyDatabase::class.java,
         DATABASE_NAME,
     )
-        .addMigrations(LeaflyDatabase.MIGRATION_1_2, LeaflyDatabase.MIGRATION_2_3)
+        .addMigrations(LeaflyDatabase.MIGRATION_1_2, LeaflyDatabase.MIGRATION_2_3, LeaflyDatabase.MIGRATION_3_4)
         .build()
 
     private val plantRepository: PlantRepository = RoomPlantRepository(database.plantDao())
@@ -42,6 +42,9 @@ class AppContainer(context: Context) {
         SyncWateringRemindersUseCase(wateringReminders)
     val cancelWateringReminder: CancelWateringReminderUseCase =
         CancelWateringReminderUseCase(wateringReminders)
+
+    /** Repositorio expuesto para pantallas que necesitan acceso directo (historial de fotos). */
+    val repository: PlantRepository = plantRepository
 
     private companion object {
         const val DATABASE_NAME = "leafly.db"

@@ -22,6 +22,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -54,14 +55,20 @@ import com.raulferrergarcia.leafly.domain.model.wateringStatus
 fun PlantDetailScreen(
     viewModel: PlantDetailViewModel,
     onBack: () -> Unit,
+    onAddPhoto: (ByteArray) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    LaunchedEffect(Unit) {
+        viewModel.loadPhotoHistory()
+    }
 
     PlantDetailContent(
         uiState = uiState,
         onBack = onBack,
         onWater = viewModel::markAsWatered,
+        onAddPhoto = onAddPhoto,
         modifier = modifier,
     )
 }
@@ -71,6 +78,7 @@ internal fun PlantDetailContent(
     uiState: PlantDetailUiState,
     onBack: () -> Unit,
     onWater: () -> Unit,
+    onAddPhoto: (ByteArray) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val plant = uiState.plant
@@ -115,6 +123,13 @@ internal fun PlantDetailContent(
                 if (uiState.saveError != null) {
                     ErrorCard()
                 }
+
+                PlantPhotoHistorySection(
+                    photos = uiState.photos,
+                    isAddingPhoto = uiState.isAddingPhoto,
+                    photoErrorMessage = uiState.photoErrorMessage,
+                    onAddPhoto = onAddPhoto,
+                )
             }
         }
     }
@@ -210,6 +225,7 @@ private fun PlantDetailPreview() {
             ),
             onBack = {},
             onWater = {},
+            onAddPhoto = {},
         )
     }
 }
