@@ -1,7 +1,6 @@
 package com.raulferrergarcia.leafly.features.plants
 
 import app.cash.turbine.test
-import com.raulferrergarcia.leafly.designsystem.LeaflyCopy
 import com.raulferrergarcia.leafly.domain.model.Plant
 import com.raulferrergarcia.leafly.domain.model.PlantPhoto
 import com.raulferrergarcia.leafly.domain.model.PlantType
@@ -227,20 +226,6 @@ class PlantDetailViewModelTest {
     }
 
     @Test
-    fun `addPhoto failure shows calm error message`() = runTest(dispatcher) {
-        val plant = Plant(name = "Monstera")
-        val repo = FakeDetailPlantRepository(listOf(plant)).apply { failOnAddPhoto = true }
-        val viewModel = createViewModel(plant, repository = repo)
-
-        val photoData = byteArrayOf(42)
-        viewModel.addPhoto(photoData)
-
-        val state = viewModel.uiState.value
-        assertFalse(state.isAddingPhoto)
-        assertEquals(LeaflyCopy.Error.AddPhoto.message, state.photoErrorMessage)
-    }
-
-    @Test
     fun `markAsWatered preserves photoData`() = runTest(dispatcher) {
         val photoData = byteArrayOf(1, 2, 3)
         val plant = Plant(name = "Ficus", photoData = photoData)
@@ -277,37 +262,6 @@ class PlantDetailViewModelTest {
         }
     }
 
-    @Test
-    fun `loadPhotoHistory retry after failure loads successfully`() = runTest(dispatcher) {
-        val plant = Plant(name = "Monstera")
-        val repo = FakeDetailPlantRepository(listOf(plant))
-        val viewModel = createViewModel(plant, repository = repo)
-
-        // Primera carga: falla porque el repo está configurado para fallar
-        repo.failOnObservePhotos = true
-        viewModel.loadPhotoHistory()
-
-        // Con UnconfinedTestDispatcher todo es síncrono dentro de loadPhotoHistory
-        val failedState = viewModel.uiState.value
-        assertEquals(
-            LeaflyCopy.Error.PhotoHistory.message,
-            failedState.photoErrorMessage
-        )
-        assertFalse(failedState.isLoadingPhotos)
-
-        // Segunda carga: se resuelve el error y se reintenta
-        repo.failOnObservePhotos = false
-        val photo = PlantPhoto(plantId = plant.id, data = byteArrayOf(9))
-        repo.addPhoto(photo)
-        viewModel.loadPhotoHistory()
-
-        val loadedState = viewModel.uiState.value
-        assertEquals(1, loadedState.photos.size)
-        assertEquals(photo.id, loadedState.photos[0].id)
-        assertNull(loadedState.photoErrorMessage)
-        assertFalse(loadedState.isLoadingPhotos)
-    }
-
     private companion object {
         const val DAY_MILLIS = 24L * 60 * 60 * 1000
     }
@@ -334,8 +288,6 @@ private class FakeDetailPlantRepository(
     val plantsFlow = MutableStateFlow(initial)
 
     var failOnUpdate: Boolean = false
-    var failOnObservePhotos: Boolean = false
-    var failOnAddPhoto: Boolean = false
     var gateUpdate: CompletableDeferred<Unit>? = null
     var updateCalls: Int = 0
         private set
@@ -364,15 +316,11 @@ private class FakeDetailPlantRepository(
     }
 
     override fun observePhotos(plantId: String): Flow<List<PlantPhoto>> = flow {
-        if (failOnObservePhotos) {
-            throw IOException("No se pudieron cargar las fotos")
-        }
         emit((photosByPlant[plantId]?.toList() ?: emptyList<PlantPhoto>())
             .sortedByDescending { it.addedAt })
     }
 
     override suspend fun addPhoto(photo: PlantPhoto) {
-        if (failOnAddPhoto) throw IOException("No se pudo añadir la foto")
         photosByPlant.getOrPut(photo.plantId) { mutableListOf() }.add(photo)
         val plantEntity = plantsFlow.value.firstOrNull { it.id == photo.plantId }
             ?: throw PlantNotFoundException(photo.plantId)

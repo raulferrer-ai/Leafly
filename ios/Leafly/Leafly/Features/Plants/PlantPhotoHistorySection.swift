@@ -16,9 +16,7 @@ import SwiftUI
 struct PlantPhotoHistorySection: View {
     let photos: [PlantPhoto]
     let isSaving: Bool
-    let photoErrorMessage: String?
     let onAddPhoto: @MainActor (Data) async -> Bool
-    let onRetry: @MainActor () async -> Void
 
     @State private var selectedPhotoItem: PhotosPickerItem?
     @State private var isShowingGallery = false
@@ -31,9 +29,7 @@ struct PlantPhotoHistorySection: View {
         VStack(alignment: .leading, spacing: LeaflySpacing.sm) {
             header
 
-            if let photoErrorMessage {
-                photoErrorCard(message: photoErrorMessage)
-            } else if photos.isEmpty {
+            if photos.isEmpty {
                 emptyState
             } else {
                 historyStrip
@@ -54,7 +50,6 @@ struct PlantPhotoHistorySection: View {
         }
         .animation(.snappy(duration: 0.25), value: photos.map(\.id))
         .animation(.snappy(duration: 0.25), value: message)
-        .animation(.snappy(duration: 0.25), value: photoErrorMessage)
         .photosPicker(
             isPresented: $isShowingGallery,
             selection: $selectedPhotoItem,
@@ -164,12 +159,12 @@ struct PlantPhotoHistorySection: View {
                 .accessibilityHidden(true)
 
                 VStack(spacing: 4) {
-                    Text(LeaflyCopy.Empty.PhotoHistory.title)
+                    Text("Aún no hay fotos")
                         .font(LeaflyFont.title3)
                         .foregroundStyle(LeaflyColor.textPrimary)
                         .accessibilityIdentifier("photo-history-empty-title")
 
-                    Text(LeaflyCopy.Empty.PhotoHistory.subtitle)
+                    Text("Cuando quieras, guarda una foto y podrás ver cómo crece con el tiempo.")
                         .font(LeaflyFont.footnote)
                         .foregroundStyle(LeaflyColor.textSecondary)
                         .multilineTextAlignment(.center)
@@ -179,37 +174,13 @@ struct PlantPhotoHistorySection: View {
                 Button {
                     isChoosingSource = true
                 } label: {
-                    Label(LeaflyCopy.Empty.PhotoHistory.button, systemImage: "camera")
+                    Label("Añadir la primera foto", systemImage: "camera")
                 }
                 .buttonStyle(LeaflyPrimaryButtonStyle())
                 .disabled(isProcessing)
                 .accessibilityIdentifier("add-first-photo-button")
             }
             .frame(maxWidth: .infinity)
-        }
-    }
-
-    // MARK: - Error de carga de fotos
-
-    private func photoErrorCard(message: String) -> some View {
-        LeaflyCard {
-            VStack(alignment: .leading, spacing: LeaflySpacing.sm) {
-                Label("Historial de fotos", systemImage: "exclamationmark.circle.fill")
-                    .font(LeaflyFont.headline)
-                    .foregroundStyle(LeaflyColor.textPrimary)
-
-                Text(message)
-                    .font(LeaflyFont.footnote)
-                    .foregroundStyle(LeaflyColor.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
-
-                Button(LeaflyCopy.Error.PhotoHistory.retry) {
-                    Task {
-                        await onRetry()
-                    }
-                }
-                .buttonStyle(LeaflyQuietButtonStyle())
-            }
         }
     }
 
