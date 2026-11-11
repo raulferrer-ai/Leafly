@@ -31,7 +31,10 @@ import androidx.compose.material.icons.rounded.AddAPhoto
 import androidx.compose.material.icons.rounded.CameraAlt
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.PhotoLibrary
+import androidx.compose.material.icons.rounded.Refresh
+import androidx.compose.material.icons.rounded.Warning
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -59,6 +62,7 @@ import com.raulferrergarcia.leafly.designsystem.LeaflyPrimaryButton
 import com.raulferrergarcia.leafly.designsystem.LeaflyQuietButton
 import com.raulferrergarcia.leafly.designsystem.LeaflyRadius
 import com.raulferrergarcia.leafly.designsystem.LeaflySpacing
+import com.raulferrergarcia.leafly.designsystem.LeaflyCopy
 import com.raulferrergarcia.leafly.designsystem.rememberPlantPhoto
 import com.raulferrergarcia.leafly.domain.model.PlantPhoto
 import java.io.File
@@ -78,6 +82,7 @@ fun PlantPhotoHistorySection(
     isAddingPhoto: Boolean,
     photoErrorMessage: String?,
     onAddPhoto: (ByteArray) -> Unit,
+    onRetry: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -244,7 +249,12 @@ fun PlantPhotoHistorySection(
     ) {
         HistoryHeader()
 
-        if (photos.isEmpty()) {
+        if (photoErrorMessage != null) {
+            PhotoErrorCard(
+                message = photoErrorMessage,
+                onRetry = onRetry,
+            )
+        } else if (photos.isEmpty()) {
             EmptyState(
                 onAddFirstPhoto = ::openSourceDialog,
                 isProcessing = isProcessing,
@@ -359,12 +369,12 @@ private fun EmptyState(
                 verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 Text(
-                    text = stringResource(R.string.plant_photo_history_empty_title),
+                    text = LeaflyCopy.Empty.PhotoHistory.title,
                     style = MaterialTheme.typography.titleMedium,
                     color = Color(0xFF2F2B26),
                 )
                 Text(
-                    text = stringResource(R.string.plant_photo_history_empty_subtitle),
+                    text = LeaflyCopy.Empty.PhotoHistory.subtitle,
                     style = MaterialTheme.typography.bodyMedium,
                     color = Color(0xFF6D675E),
                     textAlign = TextAlign.Center,
@@ -372,7 +382,7 @@ private fun EmptyState(
             }
 
             LeaflyPrimaryButton(
-                text = stringResource(R.string.plant_photo_history_add_first),
+                text = LeaflyCopy.Empty.PhotoHistory.button,
                 onClick = onAddFirstPhoto,
                 enabled = !isProcessing,
                 icon = Icons.Rounded.CameraAlt,
@@ -398,6 +408,43 @@ private fun ProcessingRow() {
             style = MaterialTheme.typography.bodyMedium,
             color = Color(0xFF6D675E),
         )
+    }
+}
+
+@Composable
+private fun PhotoErrorCard(
+    message: String,
+    onRetry: () -> Unit,
+) {
+    LeaflyCard {
+        Column(verticalArrangement = Arrangement.spacedBy(LeaflySpacing.sm)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = Icons.Rounded.Warning,
+                    contentDescription = null,
+                    tint = LeaflyColors.NeedsWaterNow,
+                    modifier = Modifier.size(18.dp),
+                )
+                Spacer(modifier = Modifier.width(LeaflySpacing.xs))
+                Text(
+                    text = stringResource(R.string.plant_photo_history_error_title),
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = LeaflyColors.TextPrimary,
+                )
+            }
+
+            Text(
+                text = LeaflyCopy.Error.PhotoHistory.message,
+                style = MaterialTheme.typography.bodyMedium,
+                color = LeaflyColors.TextSecondary,
+            )
+
+            LeaflyQuietButton(
+                text = LeaflyCopy.Error.PhotoHistory.retry,
+                icon = Icons.Rounded.Refresh,
+                onClick = onRetry,
+            )
+        }
     }
 }
 

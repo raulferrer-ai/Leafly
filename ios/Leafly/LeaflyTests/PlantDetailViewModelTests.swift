@@ -225,6 +225,29 @@ final class PlantDetailViewModelTests: XCTestCase {
         XCTAssertFalse(viewModel.isLoadingPhotos)
     }
 
+    func testLoadPhotoHistoryRetryAfterFailureLoadsSuccessfully() async {
+        let plant = Plant(name: "Monstera")
+        let repository = MockPlantDetailRepository(
+            plants: [plant],
+            photos: [PlantPhoto(plantID: plant.id, addedAt: now, data: Data([0x01]))]
+        )
+        repository.fetchPhotosError = MockError.fetchPhotosFailed
+        let viewModel = makeViewModel(plant: plant, repository: repository)
+
+        // Primera carga: falla
+        await viewModel.loadPhotoHistory()
+        XCTAssertNotNil(viewModel.photoErrorMessage)
+        XCTAssertTrue(viewModel.photos.isEmpty)
+
+        // Segundo carga: se resuelve el error y se reintenta
+        repository.fetchPhotosError = nil
+        await viewModel.loadPhotoHistory()
+
+        XCTAssertEqual(viewModel.photos.count, 1)
+        XCTAssertNil(viewModel.photoErrorMessage)
+        XCTAssertFalse(viewModel.isLoadingPhotos)
+    }
+
     func testAddPhotoPersistsItAndUpdatesTheMainPhoto() async {
         let plant = Plant(name: "Monstera")
         let repository = MockPlantDetailRepository(plants: [plant])

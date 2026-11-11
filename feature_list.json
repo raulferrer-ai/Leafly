@@ -64,5 +64,16 @@
         ],
         "priority": 6,
         "spec": "features/06-plant-photo-history.feature"
+    },
+    {
+        "id": "empty-states-polish",
+        "title": "Estados vacíos y de error calmados",
+        "status": "in_progress",
+        "platforms": [
+            "ios",
+            "android"
+        ],
+        "priority": 7,
+        "spec": "features/07-empty-states-polish.feature"
     }
 ]

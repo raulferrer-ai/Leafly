@@ -57,6 +57,7 @@ import com.raulferrergarcia.leafly.designsystem.LeaflyColors
 import com.raulferrergarcia.leafly.designsystem.LeaflyPrimaryButton
 import com.raulferrergarcia.leafly.designsystem.LeaflyScreen
 import com.raulferrergarcia.leafly.designsystem.LeaflySpacing
+import com.raulferrergarcia.leafly.designsystem.LeaflyCopy
 import com.raulferrergarcia.leafly.designsystem.LeaflyStatusBadge
 import com.raulferrergarcia.leafly.designsystem.LeaflyTheme
 import com.raulferrergarcia.leafly.designsystem.color
@@ -368,14 +369,14 @@ private fun ErrorCard(onRetry: () -> Unit) {
                 )
                 Spacer(modifier = Modifier.width(LeaflySpacing.xs))
                 Text(
-                    text = stringResource(R.string.plants_error_title),
+                    text = LeaflyCopy.Error.Plants.title,
                     style = MaterialTheme.typography.headlineSmall,
                     color = LeaflyColors.TextPrimary,
                 )
             }
 
             Text(
-                text = stringResource(R.string.plants_error_message),
+                text = LeaflyCopy.Error.Plants.message,
                 style = MaterialTheme.typography.bodyMedium,
                 color = LeaflyColors.TextSecondary,
             )
@@ -387,7 +388,7 @@ private fun ErrorCard(onRetry: () -> Unit) {
                 ),
             ) {
                 Text(
-                    text = stringResource(R.string.plants_retry),
+                    text = LeaflyCopy.Error.Plants.retry,
                     style = MaterialTheme.typography.labelLarge,
                 )
             }
@@ -418,20 +419,20 @@ private fun EmptyCard(onAddPlant: () -> Unit) {
             }
 
             Text(
-                text = stringResource(R.string.plants_empty_title),
+                text = LeaflyCopy.Empty.Plants.title,
                 style = MaterialTheme.typography.titleMedium,
                 color = LeaflyColors.TextPrimary,
             )
 
             Text(
-                text = stringResource(R.string.plants_empty_subtitle),
+                text = LeaflyCopy.Empty.Plants.subtitle,
                 style = MaterialTheme.typography.bodyMedium,
                 color = LeaflyColors.TextSecondary,
                 textAlign = TextAlign.Center,
             )
 
             LeaflyPrimaryButton(
-                text = stringResource(R.string.plants_empty_action),
+                text = LeaflyCopy.Empty.Plants.button,
                 onClick = onAddPlant,
             )
         }
