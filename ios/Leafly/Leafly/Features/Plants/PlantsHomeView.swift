@@ -149,7 +149,7 @@ struct PlantsHomeView: View {
     private func errorCard(message: String) -> some View {
         LeaflyCard {
             VStack(alignment: .leading, spacing: LeaflySpacing.sm) {
-                Label("No hemos podido cargar tus plantas", systemImage: "exclamationmark.circle.fill")
+                Label(LeaflyCopy.Error.Plants.title, systemImage: "exclamationmark.circle.fill")
                     .font(LeaflyFont.headline)
                     .foregroundStyle(LeaflyColor.textPrimary)
 
@@ -158,7 +158,7 @@ struct PlantsHomeView: View {
                     .foregroundStyle(LeaflyColor.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
 
-                Button("Reintentar") {
+                Button(LeaflyCopy.Error.Plants.retry) {
                     Task { await viewModel.load() }
                 }
                 .buttonStyle(LeaflyQuietButtonStyle())
@@ -180,17 +180,17 @@ struct PlantsHomeView: View {
                 }
                 .accessibilityHidden(true)
 
-                Text("Tu jardín está esperando")
+                Text(LeaflyCopy.Empty.Plants.title)
                     .font(LeaflyFont.title3)
                     .foregroundStyle(LeaflyColor.textPrimary)
 
-                Text("Añade una planta para empezar a cuidarla con calma.")
+                Text(LeaflyCopy.Empty.Plants.subtitle)
                     .font(LeaflyFont.footnote)
                     .foregroundStyle(LeaflyColor.textSecondary)
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
 
-                Button("Añadir mi primera planta") {
+                Button(LeaflyCopy.Empty.Plants.button) {
                     isShowingAddPlant = true
                 }
                 .buttonStyle(LeaflyPrimaryButtonStyle())

@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import com.raulferrergarcia.leafly.designsystem.LeaflyCopy
 import com.raulferrergarcia.leafly.domain.model.Plant
 import com.raulferrergarcia.leafly.domain.model.PlantPhoto
 import com.raulferrergarcia.leafly.domain.repository.PlantRepository
@@ -85,7 +86,7 @@ class PlantDetailViewModel(
                 _uiState.update { state ->
                     state.copy(
                         isLoadingPhotos = false,
-                        photoErrorMessage = "No hemos podido cargar las fotos. Inténtalo de nuevo.",
+                        photoErrorMessage = LeaflyCopy.Error.PhotoHistory.message,
                     )
                 }
             }
@@ -124,7 +125,7 @@ class PlantDetailViewModel(
                 _uiState.update { state ->
                     state.copy(
                         isAddingPhoto = false,
-                        photoErrorMessage = "No hemos podido guardar la foto. Inténtalo de nuevo.",
+                        photoErrorMessage = LeaflyCopy.Error.AddPhoto.message,
                     )
                 }
             }

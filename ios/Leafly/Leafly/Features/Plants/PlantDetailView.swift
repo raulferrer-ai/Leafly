@@ -44,6 +44,10 @@ struct PlantDetailView: View {
                     if let errorMessage = viewModel.errorMessage {
                         errorCard(message: errorMessage)
                     }
+
+                    if let photoErrorMessage = viewModel.photoErrorMessage {
+                        photoErrorCard(message: photoErrorMessage)
+                    }
                 }
                 .frame(maxWidth: LeaflySpacing.contentMaxWidth)
                 .padding(.horizontal, LeaflySpacing.screenHorizontal)
@@ -152,6 +156,7 @@ struct PlantDetailView: View {
         PlantPhotoHistorySection(
             photos: viewModel.photos,
             isSaving: viewModel.isAddingPhoto,
+            photoErrorMessage: viewModel.photoErrorMessage,
             onAddPhoto: { data in
                 let didAdd = await viewModel.addPhoto(data)
 
@@ -160,17 +165,54 @@ struct PlantDetailView: View {
                 }
 
                 return didAdd
+            },
+            onRetry: {
+                await viewModel.loadPhotoHistory()
             }
         )
     }
 
     private func errorCard(message: String) -> some View {
         LeaflyCard {
-            Text(message)
-                .font(LeaflyFont.footnote)
-                .foregroundStyle(LeaflyColor.textSecondary)
-                .fixedSize(horizontal: false, vertical: true)
-                .accessibilityIdentifier("plant-detail-error")
+            VStack(alignment: .leading, spacing: LeaflySpacing.sm) {
+                Label(LeaflyCopy.Error.Plants.title, systemImage: "exclamationmark.circle.fill")
+                    .font(LeaflyFont.headline)
+                    .foregroundStyle(LeaflyColor.textPrimary)
+
+                Text(message)
+                    .font(LeaflyFont.footnote)
+                    .foregroundStyle(LeaflyColor.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Button(LeaflyCopy.Error.Plants.retry) {
+                    Task {
+                        await viewModel.markAsWatered()
+                    }
+                }
+                .buttonStyle(LeaflyQuietButtonStyle())
+            }
+        }
+    }
+
+    private func photoErrorCard(message: String) -> some View {
+        LeaflyCard {
+            VStack(alignment: .leading, spacing: LeaflySpacing.sm) {
+                Label("Historial de fotos", systemImage: "exclamationmark.circle.fill")
+                    .font(LeaflyFont.headline)
+                    .foregroundStyle(LeaflyColor.textPrimary)
+
+                Text(message)
+                    .font(LeaflyFont.footnote)
+                    .foregroundStyle(LeaflyColor.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Button(LeaflyCopy.Error.PhotoHistory.retry) {
+                    Task {
+                        await viewModel.loadPhotoHistory()
+                    }
+                }
+                .buttonStyle(LeaflyQuietButtonStyle())
+            }
         }
     }
 }

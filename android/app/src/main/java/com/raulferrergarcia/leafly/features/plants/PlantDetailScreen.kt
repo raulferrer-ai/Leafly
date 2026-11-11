@@ -37,6 +37,7 @@ import com.raulferrergarcia.leafly.designsystem.LeaflyColors
 import com.raulferrergarcia.leafly.designsystem.LeaflyPrimaryButton
 import com.raulferrergarcia.leafly.designsystem.LeaflyScreen
 import com.raulferrergarcia.leafly.designsystem.LeaflySpacing
+import com.raulferrergarcia.leafly.designsystem.LeaflyCopy
 import com.raulferrergarcia.leafly.designsystem.LeaflyStatusBadge
 import com.raulferrergarcia.leafly.designsystem.LeaflyTheme
 import com.raulferrergarcia.leafly.designsystem.color
@@ -69,6 +70,7 @@ fun PlantDetailScreen(
         onBack = onBack,
         onWater = viewModel::markAsWatered,
         onAddPhoto = onAddPhoto,
+        onRetry = { viewModel.loadPhotoHistory() },
         modifier = modifier,
     )
 }
@@ -79,6 +81,7 @@ internal fun PlantDetailContent(
     onBack: () -> Unit,
     onWater: () -> Unit,
     onAddPhoto: (ByteArray) -> Unit = {},
+    onRetry: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val plant = uiState.plant
@@ -129,6 +132,7 @@ internal fun PlantDetailContent(
                     isAddingPhoto = uiState.isAddingPhoto,
                     photoErrorMessage = uiState.photoErrorMessage,
                     onAddPhoto = onAddPhoto,
+                    onRetry = onRetry,
                 )
             }
         }
@@ -203,7 +207,7 @@ private fun ErrorCard() {
             )
             Spacer(modifier = Modifier.width(LeaflySpacing.xs))
             Text(
-                text = stringResource(R.string.plant_detail_save_error),
+                text = LeaflyCopy.Error.Watering.message,
                 style = MaterialTheme.typography.bodyMedium,
                 color = LeaflyColors.TextSecondary,
             )

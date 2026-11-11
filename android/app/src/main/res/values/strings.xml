@@ -85,6 +85,7 @@
     <string name="plant_photo_history_subtitle">Las fotos que guardes quedarán aquí, de la más reciente a la más antigua.</string>
     <string name="plant_photo_history_empty_title">Aún no hay fotos</string>
     <string name="plant_photo_history_empty_subtitle">Cuando quieras, guarda una foto y podrás ver cómo crece con el tiempo.</string>
+    <string name="plant_photo_history_error_title">Historial de fotos</string>
     <string name="plant_photo_history_add_first">Añadir la primera foto</string>
     <string name="plant_photo_history_add_another">Añadir otra foto</string>
     <string name="plant_photo_history_processing">Preparando la foto...</string>
