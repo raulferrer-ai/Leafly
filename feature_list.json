@@ -68,7 +68,7 @@
     {
         "id": "empty-states-polish",
         "title": "Estados vacíos y de error calmados",
-        "status": "in_progress",
+        "status": "done",
         "platforms": [
             "ios",
             "android"
