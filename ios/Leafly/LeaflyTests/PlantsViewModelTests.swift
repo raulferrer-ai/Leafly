@@ -137,6 +137,117 @@ final class PlantsViewModelTests: XCTestCase {
         XCTAssertEqual(reminders.syncedPlants.count, 1)
     }
 
+    // MARK: - Búsqueda y filtros
+
+    func testFilterByNameCaseInsensitive() async {
+        let plants = [
+            Plant(name: "Monstera", type: .monstera),
+            Plant(name: "Ficus", type: .ficus),
+            Plant(name: "Potos", type: .pothos),
+            Plant(name: "Cactus", type: .cactus),
+        ]
+        let repository = MockPlantRepository(plants: plants)
+        let viewModel = makeViewModel(repository: repository)
+        await viewModel.load()
+
+        viewModel.setSearchText("mon")
+        XCTAssertEqual(viewModel.filteredPlants.map(\.name), ["Monstera"])
+
+        viewModel.setSearchText("MON")
+        XCTAssertEqual(viewModel.filteredPlants.map(\.name), ["Monstera"])
+
+        viewModel.setSearchText("c")
+        XCTAssertEqual(viewModel.filteredPlants.map(\.name).sorted(), ["Cactus", "Ficus"])
+    }
+
+    func testFilterByWateringStatus() async {
+        let now = Date()
+        let plants = [
+            Plant(name: "Al día", type: .monstera, lastWateredAt: now),
+            Plant(name: "Pronto", type: .ficus, lastWateredAt: now.addingTimeInterval(-6 * 86_400)),
+            Plant(name: "Urgente", type: .pothos, lastWateredAt: now.addingTimeInterval(-8 * 86_400)),
+        ]
+        let repository = MockPlantRepository(plants: plants)
+        let viewModel = makeViewModel(repository: repository)
+        await viewModel.load()
+
+        viewModel.setStatusFilter(.healthy)
+        XCTAssertEqual(viewModel.filteredPlants.map(\.name), ["Al día"])
+
+        viewModel.setStatusFilter(.needsWaterSoon)
+        XCTAssertEqual(viewModel.filteredPlants.map(\.name), ["Pronto"])
+
+        viewModel.setStatusFilter(.needsWaterNow)
+        XCTAssertEqual(viewModel.filteredPlants.map(\.name), ["Urgente"])
+    }
+
+    func testFilterByStatusTogglesOffWhenReselected() async {
+        let plants = [Plant(name: "Monstera", type: .monstera, lastWateredAt: .now)]
+        let repository = MockPlantRepository(plants: plants)
+        let viewModel = makeViewModel(repository: repository)
+        await viewModel.load()
+
+        viewModel.setStatusFilter(.healthy)
+        XCTAssertEqual(viewModel.filteredPlants.count, 1)
+
+        viewModel.setStatusFilter(.healthy)
+        XCTAssertNil(viewModel.selectedStatusFilter)
+        XCTAssertEqual(viewModel.filteredPlants.count, 1)
+    }
+
+    func testCombineSearchAndStatusFilter() async {
+        let now = Date()
+        let plants = [
+            Plant(name: "Monstera deliciosa", type: .monstera, lastWateredAt: now),
+            Plant(name: "Monstera adansonii", type: .monstera, lastWateredAt: now.addingTimeInterval(-6 * 86_400)),
+            Plant(name: "Ficus lyrata", type: .ficus, lastWateredAt: now),
+            Plant(name: "Ficus elastica", type: .ficus, lastWateredAt: now.addingTimeInterval(-8 * 86_400)),
+        ]
+        let repository = MockPlantRepository(plants: plants)
+        let viewModel = makeViewModel(repository: repository)
+        await viewModel.load()
+
+        viewModel.setSearchText("monstera")
+        XCTAssertEqual(viewModel.filteredPlants.count, 2)
+
+        viewModel.setStatusFilter(.needsWaterSoon)
+        XCTAssertEqual(viewModel.filteredPlants.map(\.name), ["Monstera adansonii"])
+
+        // Búsqueda vacía + filtro activo
+        viewModel.setSearchText(nil)
+        XCTAssertEqual(viewModel.filteredPlants.map(\.name), ["Monstera adansonii"])
+    }
+
+    func testClearFiltersRestoresFullList() async {
+        let plants = [
+            Plant(name: "Monstera", type: .monstera, lastWateredAt: .now),
+            Plant(name: "Ficus", type: .ficus, lastWateredAt: .now.addingTimeInterval(-6 * 86_400)),
+        ]
+        let repository = MockPlantRepository(plants: plants)
+        let viewModel = makeViewModel(repository: repository)
+        await viewModel.load()
+
+        viewModel.setSearchText("ficus")
+        viewModel.setStatusFilter(.healthy)
+        XCTAssertTrue(viewModel.filteredPlants.isEmpty)
+
+        viewModel.clearFilters()
+        XCTAssertEqual(viewModel.filteredPlants.count, 2)
+        XCTAssertTrue(viewModel.searchText.isEmpty)
+        XCTAssertNil(viewModel.selectedStatusFilter)
+    }
+
+    func testSearchWithNoResultsShowsEmptyFilteredList() async {
+        let plants = [Plant(name: "Monstera", type: .monstera)]
+        let repository = MockPlantRepository(plants: plants)
+        let viewModel = makeViewModel(repository: repository)
+        await viewModel.load()
+
+        viewModel.setSearchText("cactus")
+        XCTAssertTrue(viewModel.filteredPlants.isEmpty)
+        XCTAssertTrue(viewModel.hasActiveFilters)
+    }
+
     // MARK: - Helpers
 
     private func makeViewModel(

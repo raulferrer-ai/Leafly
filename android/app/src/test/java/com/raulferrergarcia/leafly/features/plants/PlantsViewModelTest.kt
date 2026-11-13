@@ -6,7 +6,6 @@ import com.raulferrergarcia.leafly.domain.model.PlantPhoto
 import com.raulferrergarcia.leafly.domain.repository.PlantNotFoundException
 import com.raulferrergarcia.leafly.domain.repository.PlantRepository
 import com.raulferrergarcia.leafly.domain.scheduling.WateringReminderScheduling
-import com.raulferrergarcia.leafly.domain.usecase.ObservePlantsUseCase
 import com.raulferrergarcia.leafly.domain.usecase.SyncWateringRemindersUseCase
 import java.io.IOException
 import kotlinx.coroutines.Dispatchers
@@ -46,7 +45,7 @@ class PlantsViewModelTest {
         repository: FakePlantRepository,
         reminders: FakeWateringReminderScheduling = FakeWateringReminderScheduling(),
     ): PlantsViewModel = PlantsViewModel(
-        observePlants = ObservePlantsUseCase(repository),
+        plantRepository = repository,
         syncWateringReminders = SyncWateringRemindersUseCase(reminders),
     )
 
@@ -167,9 +166,8 @@ class PlantsViewModelTest {
             while (state.plants.isEmpty()) {
                 state = awaitItem()
             }
-
-            assertEquals("Ficus", state.plants.single().name)
             assertNull(state.loadError)
+            assertEquals("Ficus", state.plants.single().name)
             cancelAndIgnoreRemainingEvents()
         }
     }

@@ -25,6 +25,13 @@ object LeaflyCopy {
             val subtitle = "Cuando quieras, guarda una foto y podrás ver cómo crece con el tiempo."
             val button = "Añadir la primera foto"
         }
+
+        /** Búsqueda o filtro sin resultados. */
+        object SearchResults {
+            val title = "No se encontraron plantas"
+            val subtitle = "Prueba con otro nombre o quita los filtros."
+            val button = "Limpiar búsqueda"
+        }
     }
 
     // MARK: - Errores

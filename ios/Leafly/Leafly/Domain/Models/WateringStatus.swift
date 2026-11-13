@@ -13,7 +13,7 @@ import Foundation
 /// - 0–4 días → bien
 /// - 5–6 días → conviene regar pronto
 /// - 7 días o más → riego urgente
-nonisolated enum WateringStatus: Equatable, Sendable {
+nonisolated enum WateringStatus: Equatable, Sendable, CaseIterable {
     case healthy
     case needsWaterSoon
     case needsWaterNow

@@ -40,6 +40,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
@@ -297,63 +298,6 @@ fun LeaflyCircularIconButton(
 /**
  * Chip de selección: muy redondeado, con icono y texto.
  */
-@Composable
-fun LeaflyChip(
-    title: String,
-    icon: ImageVector,
-    selected: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val shape = RoundedCornerShape(LeaflyRadius.chip)
-    val background by animateColorAsState(
-        targetValue = if (selected) LeaflyColors.Primary else LeaflyColors.Surface,
-        animationSpec = tween(durationMillis = 200),
-        label = "chipBackground",
-    )
-    val contentColor by animateColorAsState(
-        targetValue = if (selected) LeaflyColors.OnPrimary else LeaflyColors.Secondary,
-        animationSpec = tween(durationMillis = 200),
-        label = "chipContent",
-    )
-
-    Row(
-        modifier = modifier
-            .shadow(
-                elevation = if (selected) 12.dp else 6.dp,
-                shape = shape,
-                ambientColor = Color.Black.copy(alpha = 0.14f),
-                spotColor = Color.Black.copy(alpha = 0.14f),
-            )
-            .clip(shape)
-            .background(background)
-            .selectable(
-                selected = selected,
-                onClick = onClick,
-                role = Role.RadioButton,
-            )
-            .padding(horizontal = LeaflySpacing.sm, vertical = 14.dp),
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            tint = contentColor,
-            modifier = Modifier.size(16.dp),
-        )
-        Spacer(modifier = Modifier.width(LeaflySpacing.xs))
-        Text(
-            text = title,
-            color = contentColor,
-            style = MaterialTheme.typography.labelMedium,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
-    }
-}
-
-// ---------------------------------------------------------------------------
 // Marca
 // ---------------------------------------------------------------------------
 
@@ -442,4 +386,46 @@ fun LeaflyBottomBar(
         horizontalAlignment = Alignment.CenterHorizontally,
         content = content,
     )
+}
+
+/**
+ * Chip de selección para filtros: muy redondeado, con icono y texto.
+ *
+ * Se usa para filtros de estado (ej. estados de riego) en secciones de lista.
+ */
+@Composable
+fun LeaflyChip(
+    title: String,
+    icon: ImageVector?,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier
+            .clickable(
+                enabled = true,
+                role = Role.Button,
+                onClick = onClick,
+            )
+            .padding(horizontal = LeaflySpacing.sm, vertical = 10.dp),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        if (icon != null) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = if (selected) LeaflyColors.OnPrimary else LeaflyColors.Secondary,
+                modifier = Modifier.size(16.dp),
+            )
+        }
+        Spacer(modifier = Modifier.width(LeaflySpacing.xs))
+        Text(
+            text = title,
+            color = if (selected) LeaflyColors.OnPrimary else LeaflyColors.Secondary,
+            style = MaterialTheme.typography.labelMedium,
+            maxLines = 1,
+        )
+    }
 }

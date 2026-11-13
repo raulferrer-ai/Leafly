@@ -80,6 +80,11 @@
     <string name="plant_detail_water_action">Ya la regué</string>
     <string name="plant_detail_save_error">No hemos podido guardar el riego. Inténtalo de nuevo.</string>
 
+    <!-- Búsqueda y filtros -->
+    <string name="plant_search_placeholder">Buscar por nombre</string>
+    <string name="plant_filter_by_status">Filtrar por estado</string>
+    <string name="plants_search_results_count">%1$d plantas coinciden</string>
+
     <!-- Historial de fotos -->
     <string name="plant_photo_history_title">Su historia</string>
     <string name="plant_photo_history_subtitle">Las fotos que guardes quedarán aquí, de la más reciente a la más antigua.</string>

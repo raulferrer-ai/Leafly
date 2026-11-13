@@ -23,6 +23,13 @@ enum LeaflyCopy {
             static let button = "Añadir mi primera planta"
         }
 
+        /// Búsqueda o filtro sin resultados.
+        enum SearchResults {
+            static let title = "No se encontraron plantas"
+            static let subtitle = "Prueba con otro nombre o quita los filtros."
+            static let button = "Limpiar búsqueda"
+        }
+
         /// Historial de fotos de una planta sin imágenes aún.
         enum PhotoHistory {
             static let title = "Aún no hay fotos"

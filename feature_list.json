@@ -75,5 +75,16 @@
         ],
         "priority": 7,
         "spec": "features/07-empty-states-polish.feature"
+    },
+    {
+        "id": "plant-search-filter",
+        "title": "Buscar y filtrar plantas por nombre y estado de riego",
+        "status": "done",
+        "platforms": [
+            "ios",
+            "android"
+        ],
+        "priority": 8,
+        "spec": "features/08-plant-search-filter.feature"
     }
 ]
