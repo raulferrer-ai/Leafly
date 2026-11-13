@@ -8,6 +8,8 @@
 import SwiftUI
 
 /// Lista de todas las plantas, con su estado de riego de un vistazo.
+///
+/// Permite buscar por nombre y filtrar por estado de riego.
 struct PlantsHomeView: View {
     private let repository: any PlantRepository
     private let reminders: any WateringReminderScheduling
@@ -35,6 +37,7 @@ struct PlantsHomeView: View {
                 ScrollView(showsIndicators: false) {
                     VStack(alignment: .leading, spacing: LeaflySpacing.lg) {
                         header
+                        searchAndFilters
                         content
                     }
                     .frame(maxWidth: LeaflySpacing.contentMaxWidth)
@@ -100,11 +103,97 @@ struct PlantsHomeView: View {
     }
 
     private var plantsSubtitle: String {
-        switch viewModel.plants.count {
-        case 0: "Un lugar tranquilo para tus plantas."
-        case 1: "Una planta a tu cuidado."
-        default: "\(viewModel.plants.count) plantas a tu cuidado."
+        let filteredCount = viewModel.filteredPlants.count
+        if viewModel.hasActiveFilters {
+            return "\(filteredCount) planta\(filteredCount == 1 ? "" : "s") coinciden"
         }
+        switch filteredCount {
+        case 0: return "Un lugar tranquilo para tus plantas."
+        case 1: return "Una planta a tu cuidado."
+        default: return "\(filteredCount) plantas a tu cuidado."
+        }
+    }
+
+    // MARK: - Búsqueda y filtros
+
+    private var searchAndFilters: some View {
+        VStack(alignment: .leading, spacing: LeaflySpacing.md) {
+            searchField
+            statusFilterChips
+            if viewModel.hasActiveFilters {
+                clearFiltersButton
+            }
+        }
+    }
+
+    private var searchField: some View {
+        HStack(spacing: LeaflySpacing.sm) {
+            Image(systemName: "magnifyingglass")
+                .font(.system(size: 16, weight: .regular))
+                .foregroundStyle(LeaflyColor.textTertiary)
+
+            TextField(
+                "Buscar por nombre",
+                text: Binding(
+                    get: { viewModel.searchText },
+                    set: { viewModel.setSearchText($0) }
+                )
+            )
+            .font(LeaflyFont.body)
+            .foregroundStyle(LeaflyColor.textPrimary)
+
+            if !viewModel.searchText.isEmpty {
+                Button {
+                    viewModel.setSearchText(nil)
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 16, weight: .regular))
+                        .foregroundStyle(LeaflyColor.textTertiary)
+                }
+                .accessibilityLabel("Limpiar búsqueda")
+            }
+        }
+        .padding(.horizontal, LeaflySpacing.md)
+        .padding(.vertical, LeaflySpacing.sm)
+        .background(
+            RoundedRectangle(cornerRadius: LeaflyRadius.field, style: .continuous)
+                .fill(LeaflyColor.fieldSurface)
+        )
+        .accessibilityLabel("Buscar planta por nombre")
+    }
+
+    private var statusFilterChips: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: LeaflySpacing.sm) {
+                ForEach(WateringStatus.allCases, id: \.self) { status in
+                    LeaflyChip(
+                        title: status.title,
+                        systemImage: status.symbolName,
+                        isSelected: viewModel.selectedStatusFilter == status
+                    ) {
+                        viewModel.setStatusFilter(status)
+                    }
+                    .accessibilityLabel("\(status.title), \(viewModel.selectedStatusFilter == status ? "seleccionado" : "no seleccionado")")
+                }
+            }
+            .padding(.horizontal, LeaflySpacing.xs)
+        }
+    }
+
+    private var clearFiltersButton: some View {
+        Button {
+            viewModel.clearFilters()
+        } label: {
+            HStack(spacing: LeaflySpacing.xs) {
+                Image(systemName: "xmark.circle.fill")
+                    .font(.system(size: 14, weight: .regular))
+                Text(LeaflyCopy.Empty.SearchResults.button)
+                    .font(LeaflyFont.callout)
+            }
+            .foregroundStyle(LeaflyColor.secondary)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(LeaflyCopy.Empty.SearchResults.button)
     }
 
     // MARK: - Contenido
@@ -115,10 +204,45 @@ struct PlantsHomeView: View {
             loadingView
         } else if let errorMessage = viewModel.errorMessage {
             errorCard(message: errorMessage)
-        } else if viewModel.plants.isEmpty {
+        } else if viewModel.filteredPlants.isEmpty && viewModel.hasActiveFilters {
+            emptySearchResults
+        } else if viewModel.filteredPlants.isEmpty {
             emptyState
         } else {
             plantsList
+        }
+    }
+
+    private var emptySearchResults: some View {
+        LeaflyCard {
+            VStack(spacing: LeaflySpacing.md) {
+                ZStack {
+                    Circle()
+                        .fill(LeaflyColor.primarySoft)
+                        .frame(width: 64, height: 64)
+
+                    Image(systemName: "magnifyingglass")
+                        .font(.system(size: 24, weight: .semibold))
+                        .foregroundStyle(LeaflyColor.secondary)
+                }
+                .accessibilityHidden(true)
+
+                Text(LeaflyCopy.Empty.SearchResults.title)
+                    .font(LeaflyFont.title3)
+                    .foregroundStyle(LeaflyColor.textPrimary)
+
+                Text(LeaflyCopy.Empty.SearchResults.subtitle)
+                    .font(LeaflyFont.footnote)
+                    .foregroundStyle(LeaflyColor.textSecondary)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Button(LeaflyCopy.Empty.SearchResults.button) {
+                    viewModel.clearFilters()
+                }
+                .buttonStyle(LeaflyPrimaryButtonStyle())
+            }
+            .frame(maxWidth: .infinity)
         }
     }
 
@@ -135,7 +259,7 @@ struct PlantsHomeView: View {
 
     private var plantsList: some View {
         VStack(spacing: LeaflySpacing.sm) {
-            ForEach(viewModel.plants) { plant in
+            ForEach(viewModel.filteredPlants) { plant in
                 NavigationLink(value: plant) {
                     PlantCard(plant: plant)
                 }
