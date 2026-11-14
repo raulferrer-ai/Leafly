@@ -11,6 +11,10 @@ import Foundation
 /// las notificaciones del sistema.
 @MainActor
 struct NoopWateringReminders: WateringReminderScheduling {
-    func sync(plants: [Plant]) async {}
+    func sync(
+        plants: [Plant],
+        preferredHour: Int,
+        preferredMinute: Int
+    ) async {}
     func cancelReminder(for plantID: UUID) async {}
 }

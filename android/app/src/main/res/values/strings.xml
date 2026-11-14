@@ -84,6 +84,7 @@
     <string name="plant_search_placeholder">Buscar por nombre</string>
     <string name="plant_filter_by_status">Filtrar por estado</string>
     <string name="plants_search_results_count">%1$d plantas coinciden</string>
+    <string name="plants_settings">Ajustes</string>
 
     <!-- Historial de fotos -->
     <string name="plant_photo_history_title">Su historia</string>

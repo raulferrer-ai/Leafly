@@ -1,21 +1,18 @@
-# Progress — Leafly (harness-hardening)
+# Progress — Leafly
 
 ## Estado actual
-Harness endurecido operativo. `plant-search-filter` cerrada en ambas plataformas (gate dual PASADO).
+CI en verde. settings-notifications cerrada en iOS + Android (check dual OK).
 
-## Features en esta rama
-| Feature | Estado |
-|---------|--------|
-| empty-states-polish | done |
-| plant-search-filter | done |
+## Completado recientemente
+### settings-notifications → done
+- Hora preferida de recordatorios persistida
+- Estado de permiso calmado + CTA a ajustes del sistema si está denegado
+- Planner usa preferredHour/Minute (margen ≥1 h conservado)
+- Sin solicitud agresiva de permiso sin plantas con sed
+- iOS + Android verificados (check dual OK)
 
-## plant-search-filter — resumen
-- Búsqueda por nombre (case-insensitive)
-- Filtro por estado de riego (Al día / Riega pronto / Necesita agua)
-- Combinación de ambos + empty calmado + limpiar
-- iOS: ViewModel + UI + tests
-- Android: ViewModel/StateFlow + Compose + unit tests
-- `./scripts/verify-feature.sh plant-search-filter` → PASADO
+## Feature actual
+Ninguna.
 
 ## Próximo paso
-Elegir siguiente feature de producto (p. ej. settings-notifications, watering-log) o merge/PR de harness-hardening hacia main.
+Elegir siguiente feature (edit-plant, delete-plant, watering-log, accessibility-pass o widget).

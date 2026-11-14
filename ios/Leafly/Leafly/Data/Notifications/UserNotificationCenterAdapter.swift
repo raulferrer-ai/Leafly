@@ -25,6 +25,11 @@ final class UserNotificationCenterAdapter: LocalNotificationCenter {
         return (try? await center.requestAuthorization(options: options)) ?? false
     }
 
+    func currentAuthorizationStatus() async -> UNAuthorizationStatus {
+        let settings = await center.notificationSettings()
+        return settings.authorizationStatus
+    }
+
     func pendingIdentifiers(withPrefix prefix: String) async -> [String] {
         await center.pendingNotificationRequests()
             .map(\.identifier)

@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import com.raulferrergarcia.leafly.data.repository.NotificationPreferencesRepository
+import com.raulferrergarcia.leafly.domain.model.NotificationPreferences
 import com.raulferrergarcia.leafly.domain.model.Plant
 import com.raulferrergarcia.leafly.domain.model.WateringStatus
 import com.raulferrergarcia.leafly.domain.model.wateringStatus
@@ -23,6 +25,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
 /**
  * Estado y lógica de la lista de plantas.
@@ -38,6 +41,7 @@ import kotlinx.coroutines.flow.update
 class PlantsViewModel(
     private val plantRepository: PlantRepository,
     private val syncWateringReminders: SyncWateringRemindersUseCase,
+    private val preferencesRepository: NotificationPreferencesRepository? = null,
 ) : ViewModel() {
 
     private val retryTrigger = MutableStateFlow(0)
@@ -63,7 +67,10 @@ class PlantsViewModel(
     private fun observePlantsUi(): Flow<PlantsUiState> = flow {
         try {
             plantRepository.observePlants()
-                .onEach { plants -> syncRemindersSafely(plants) }
+                .onEach { plants ->
+                    val preferences = preferencesRepository?.get() ?: NotificationPreferences.Default
+                    syncRemindersSafely(plants, preferences)
+                }
                 .collect { plants ->
                     emit(
                         PlantsUiState(
@@ -106,9 +113,12 @@ class PlantsViewModel(
      * Los recordatorios son un extra: si fallan, la lista debe seguir
      * mostrándose con normalidad.
      */
-    private suspend fun syncRemindersSafely(plants: List<Plant>) {
+    private suspend fun syncRemindersSafely(
+        plants: List<Plant>,
+        preferences: NotificationPreferences,
+    ) {
         try {
-            syncWateringReminders(plants)
+            syncWateringReminders(plants, preferences)
         } catch (cancellation: CancellationException) {
             throw cancellation
         } catch (_: Exception) {
@@ -116,15 +126,27 @@ class PlantsViewModel(
         }
     }
 
+    /** Cambia la hora preferida de los recordatorios y los reprograma. */
+    fun setPreferredTime(hour: Int, minute: Int) {
+        viewModelScope.launch {
+            val currentPlants = uiState.value.plants
+            val preferences = NotificationPreferences(hour = hour, minute = minute)
+            preferencesRepository?.save(preferences)
+            syncRemindersSafely(currentPlants, preferences)
+        }
+    }
+
     companion object {
         fun factory(
             plantRepository: PlantRepository,
             syncWateringReminders: SyncWateringRemindersUseCase,
+            preferencesRepository: NotificationPreferencesRepository,
         ) = viewModelFactory {
             initializer {
                 PlantsViewModel(
                     plantRepository = plantRepository,
                     syncWateringReminders = syncWateringReminders,
+                    preferencesRepository = preferencesRepository,
                 )
             }
         }

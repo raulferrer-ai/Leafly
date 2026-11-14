@@ -175,4 +175,62 @@ final class WateringReminderPlannerTests: XCTestCase {
             WateringReminderPlanner.minimumLeadTime
         )
     }
+
+    // MARK: - Hora preferida
+
+    func testReminderUsesPreferredHourInsteadOfDefault() {
+        let fireDate = WateringReminderPlanner.nextReminderDate(
+            after: date(day: 8, hour: 8),
+            calendar: calendar,
+            preferredHour: 18,
+            preferredMinute: 30
+        )
+
+        XCTAssertEqual(fireDate, date(day: 8, hour: 18, minute: 30))
+    }
+
+    func testReminderMovesToNextDayWhenPreferredSlotHasPassed() {
+        let fireDate = WateringReminderPlanner.nextReminderDate(
+            after: date(day: 8, hour: 20),
+            calendar: calendar,
+            preferredHour: 18,
+            preferredMinute: 30
+        )
+
+        XCTAssertEqual(fireDate, date(day: 9, hour: 18, minute: 30))
+    }
+
+    func testReminderWithPreferredHourKeepsMinimumMargin() {
+        let fireDate = WateringReminderPlanner.nextReminderDate(
+            after: date(day: 8, hour: 18, minute: 30),
+            calendar: calendar,
+            preferredHour: 18,
+            preferredMinute: 30
+        )
+
+        // 18:30 is exactly now, so margin is 0 → moves to next day
+        XCTAssertEqual(fireDate, date(day: 9, hour: 18, minute: 30))
+    }
+
+    func testRemindersUsePreferredHourForAllPlants() {
+        let plant = Plant(name: "Ficus", lastWateredAt: date(day: 1))
+        let now = date(day: 6)
+
+        let reminders = WateringReminderPlanner.reminders(
+            for: [plant],
+            now: now,
+            calendar: calendar,
+            preferredHour: 15,
+            preferredMinute: 0
+        )
+
+        XCTAssertEqual(reminders.count, 1)
+        let expectedDate = calendar.date(
+            bySettingHour: 15,
+            minute: 0,
+            second: 0,
+            of: calendar.startOfDay(for: now)
+        )
+        XCTAssertEqual(reminders.first?.fireDate, expectedDate)
+    }
 }

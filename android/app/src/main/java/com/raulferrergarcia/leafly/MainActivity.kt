@@ -30,6 +30,7 @@ class MainActivity : ComponentActivity() {
                     syncWateringReminders = container.syncWateringReminders,
                     cancelWateringReminder = container.cancelWateringReminder,
                     plantRepository = container.repository,
+                    notificationPreferencesRepository = container.notificationPreferencesRepository,
                 )
             }
         }

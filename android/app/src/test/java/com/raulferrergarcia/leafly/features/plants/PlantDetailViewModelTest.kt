@@ -2,6 +2,7 @@ package com.raulferrergarcia.leafly.features.plants
 
 import app.cash.turbine.test
 import com.raulferrergarcia.leafly.designsystem.LeaflyCopy
+import com.raulferrergarcia.leafly.domain.model.NotificationPreferences
 import com.raulferrergarcia.leafly.domain.model.Plant
 import com.raulferrergarcia.leafly.domain.model.PlantPhoto
 import com.raulferrergarcia.leafly.domain.model.PlantType
@@ -318,7 +319,7 @@ private class FakeDetailWateringReminders : WateringReminderScheduling {
     val syncedPlants = mutableListOf<List<Plant>>()
     val cancelledPlantIds = mutableListOf<String>()
 
-    override suspend fun sync(plants: List<Plant>) {
+    override suspend fun sync(plants: List<Plant>, preferences: NotificationPreferences) {
         syncedPlants.add(plants)
     }
 

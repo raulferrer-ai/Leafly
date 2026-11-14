@@ -395,7 +395,11 @@ private final class MockDetailReminders: WateringReminderScheduling {
     private(set) var syncedPlants: [[Plant]] = []
     private(set) var cancelledPlantIDs: [UUID] = []
 
-    func sync(plants: [Plant]) async {
+    func sync(
+        plants: [Plant],
+        preferredHour: Int,
+        preferredMinute: Int
+    ) async {
         syncedPlants.append(plants)
     }
 

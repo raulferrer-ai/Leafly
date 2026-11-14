@@ -1,5 +1,6 @@
 package com.raulferrergarcia.leafly.domain.scheduling
 
+import com.raulferrergarcia.leafly.domain.model.NotificationPreferences
 import com.raulferrergarcia.leafly.domain.model.Plant
 import com.raulferrergarcia.leafly.domain.model.WateringReminder
 import com.raulferrergarcia.leafly.domain.model.WateringStatus
@@ -152,5 +153,62 @@ class WateringReminderPlannerTest {
 
         assertTrue(fireAt > now)
         assertTrue(fireAt - now >= WateringReminderPlanner.MINIMUM_LEAD_MILLIS)
+    }
+
+    // MARK: - Hora preferida
+
+    @Test
+    fun `the reminder uses the preferred hour instead of the default`() {
+        val fireAt = WateringReminderPlanner.nextReminderTimeMillis(
+            nowMillis = millis(day = 8, hour = 8),
+            zoneId = zone,
+            preferences = NotificationPreferences(hour = 18, minute = 30),
+        )
+
+        assertEquals(millis(day = 8, hour = 18, minute = 30), fireAt)
+    }
+
+    @Test
+    fun `the reminder moves to next day when preferred slot has passed`() {
+        val fireAt = WateringReminderPlanner.nextReminderTimeMillis(
+            nowMillis = millis(day = 8, hour = 20),
+            zoneId = zone,
+            preferences = NotificationPreferences(hour = 18, minute = 30),
+        )
+
+        assertEquals(millis(day = 9, hour = 18, minute = 30), fireAt)
+    }
+
+    @Test
+    fun `the reminder with preferred hour keeps minimum margin`() {
+        val fireAt = WateringReminderPlanner.nextReminderTimeMillis(
+            nowMillis = millis(day = 8, hour = 18, minute = 30),
+            zoneId = zone,
+            preferences = NotificationPreferences(hour = 18, minute = 30),
+        )
+
+        // 18:30 es exactamente ahora, margen 0 → pasa al día siguiente
+        assertEquals(millis(day = 9, hour = 18, minute = 30), fireAt)
+    }
+
+    @Test
+    fun `reminders use preferred hour for all plants`() {
+        val plant = Plant(name = "Ficus", lastWateredAt = millis(day = 1))
+        val now = millis(day = 6)
+
+        val reminders = WateringReminderPlanner.remindersFor(
+            plants = listOf(plant),
+            nowMillis = now,
+            zoneId = zone,
+            preferences = NotificationPreferences(hour = 15, minute = 0),
+        )
+
+        assertEquals(1, reminders.size)
+        val expected = WateringReminderPlanner.nextReminderTimeMillis(
+            nowMillis = now,
+            zoneId = zone,
+            preferences = NotificationPreferences(hour = 15, minute = 0),
+        )
+        assertEquals(expected, reminders.single().fireAtMillis)
     }
 }

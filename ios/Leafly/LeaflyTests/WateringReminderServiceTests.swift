@@ -56,7 +56,7 @@ final class WateringReminderServiceTests: XCTestCase {
             Plant(name: "Urgente", lastWateredAt: date(day: 1)),
         ]
 
-        await service.sync(plants: plants)
+        await service.sync(plants: plants, preferredHour: 10, preferredMinute: 0)
 
         XCTAssertEqual(center.addedReminders.map(\.plantName), ["Pronto", "Urgente"])
         XCTAssertEqual(center.authorizationRequests, 1)
@@ -66,7 +66,7 @@ final class WateringReminderServiceTests: XCTestCase {
         let center = FakeNotificationCenter()
         let service = makeService(center: center, now: date(day: 9))
 
-        await service.sync(plants: [Plant(name: "Al día", lastWateredAt: date(day: 9))])
+        await service.sync(plants: [Plant(name: "Al día", lastWateredAt: date(day: 9))], preferredHour: 10, preferredMinute: 0)
 
         XCTAssertTrue(center.addedReminders.isEmpty)
         XCTAssertEqual(center.authorizationRequests, 0)
@@ -83,7 +83,7 @@ final class WateringReminderServiceTests: XCTestCase {
         ]
 
         let service = makeService(center: center, now: date(day: 9))
-        await service.sync(plants: [healthyPlant, thirstyPlant])
+        await service.sync(plants: [healthyPlant, thirstyPlant], preferredHour: 10, preferredMinute: 0)
 
         XCTAssertEqual(
             center.removedIdentifiers,
@@ -99,7 +99,7 @@ final class WateringReminderServiceTests: XCTestCase {
         center.pending = [WateringReminder.identifier(for: plant.id)]
 
         let service = makeService(center: center, now: date(day: 9))
-        await service.sync(plants: [plant])
+        await service.sync(plants: [plant], preferredHour: 10, preferredMinute: 0)
 
         XCTAssertTrue(center.removedIdentifiers.isEmpty)
         XCTAssertEqual(center.addedReminders.map(\.plantName), ["Urgente"])
@@ -110,8 +110,8 @@ final class WateringReminderServiceTests: XCTestCase {
         let service = makeService(center: center, now: date(day: 9))
         let plant = Plant(name: "Urgente", lastWateredAt: date(day: 1))
 
-        await service.sync(plants: [plant])
-        await service.sync(plants: [plant])
+        await service.sync(plants: [plant], preferredHour: 10, preferredMinute: 0)
+        await service.sync(plants: [plant], preferredHour: 10, preferredMinute: 0)
 
         XCTAssertEqual(center.authorizationRequests, 1)
         XCTAssertEqual(center.addedReminders.count, 2)
@@ -124,7 +124,7 @@ final class WateringReminderServiceTests: XCTestCase {
         center.authorizationGranted = false
         let service = makeService(center: center, now: date(day: 9))
 
-        await service.sync(plants: [Plant(name: "Urgente", lastWateredAt: date(day: 1))])
+        await service.sync(plants: [Plant(name: "Urgente", lastWateredAt: date(day: 1))], preferredHour: 10, preferredMinute: 0)
 
         XCTAssertTrue(center.addedReminders.isEmpty)
         XCTAssertEqual(center.authorizationRequests, 1)
@@ -151,7 +151,7 @@ final class WateringReminderServiceTests: XCTestCase {
         let center = FakeNotificationCenter()
         let service = makeService(center: center, now: date(day: 9))
 
-        await service.sync(plants: [Plant(name: "Monstera", lastWateredAt: date(day: 1))])
+        await service.sync(plants: [Plant(name: "Monstera", lastWateredAt: date(day: 1))], preferredHour: 10, preferredMinute: 0)
 
         let reminder = center.addedReminders.first
         XCTAssertEqual(reminder?.plantName, "Monstera")
@@ -174,6 +174,10 @@ private final class FakeNotificationCenter: LocalNotificationCenter {
     func requestAuthorization() async -> Bool {
         authorizationRequests += 1
         return authorizationGranted
+    }
+
+    func currentAuthorizationStatus() async -> UNAuthorizationStatus {
+        authorizationGranted ? .authorized : .denied
     }
 
     func pendingIdentifiers(withPrefix prefix: String) async -> [String] {

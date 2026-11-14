@@ -86,5 +86,16 @@
         ],
         "priority": 8,
         "spec": "features/08-plant-search-filter.feature"
+    },
+    {
+        "id": "settings-notifications",
+        "title": "Ajustes de notificaciones de riego",
+        "status": "done",
+        "platforms": [
+            "ios",
+            "android"
+        ],
+        "priority": 9,
+        "spec": "features/09-settings-notifications.feature"
     }
 ]

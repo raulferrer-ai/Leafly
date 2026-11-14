@@ -13,16 +13,20 @@ import SwiftUI
 struct PlantsHomeView: View {
     private let repository: any PlantRepository
     private let reminders: any WateringReminderScheduling
+    private let settingsViewModel: SettingsViewModel
 
     @State private var viewModel: PlantsViewModel
     @State private var isShowingAddPlant = false
+    @State private var isShowingSettings = false
 
     init(
         repository: any PlantRepository,
-        reminders: any WateringReminderScheduling
+        reminders: any WateringReminderScheduling,
+        settingsViewModel: SettingsViewModel
     ) {
         self.repository = repository
         self.reminders = reminders
+        self.settingsViewModel = settingsViewModel
         _viewModel = State(
             initialValue: PlantsViewModel(
                 repository: repository,
@@ -60,6 +64,9 @@ struct PlantsHomeView: View {
                         await viewModel.replace(updatedPlant)
                     }
                 )
+            }
+            .navigationDestination(isPresented: $isShowingSettings) {
+                SettingsView(viewModel: settingsViewModel)
             }
             .sheet(isPresented: $isShowingAddPlant) {
                 addPlantSheet
@@ -99,6 +106,15 @@ struct PlantsHomeView: View {
             .buttonStyle(LeaflyCircularButtonStyle())
             .accessibilityLabel("Añadir una planta")
             .accessibilityIdentifier("add-plant-button")
+
+            Button {
+                isShowingSettings = true
+            } label: {
+                Image(systemName: "gearshape")
+            }
+            .buttonStyle(LeaflyCircularButtonStyle())
+            .accessibilityLabel("Ajustes")
+            .accessibilityIdentifier("settings-button")
         }
     }
 
@@ -401,7 +417,11 @@ private struct PlantCard: View {
 #Preview("Mis plantas") {
     PlantsHomeView(
         repository: PreviewPlantsRepository(),
-        reminders: NoopWateringReminders()
+        reminders: NoopWateringReminders(),
+        settingsViewModel: SettingsViewModel(
+            center: FakeNotificationCenterForPreview(),
+            reminders: NoopWateringReminders()
+        )
     )
 }
 
@@ -421,4 +441,13 @@ private final class PreviewPlantsRepository: PlantRepository {
     func update(_ plant: Plant) async throws {}
     func fetchPhotos(for plantID: UUID) async throws -> [PlantPhoto] { [] }
     func addPhoto(_ photo: PlantPhoto) async throws {}
+}
+
+@MainActor
+private final class FakeNotificationCenterForPreview: LocalNotificationCenter {
+    func requestAuthorization() async -> Bool { true }
+    func currentAuthorizationStatus() async -> UNAuthorizationStatus { .authorized }
+    func pendingIdentifiers(withPrefix prefix: String) async -> [String] { [] }
+    func add(_ reminder: WateringReminder) async {}
+    func removePending(identifiers: [String]) async {}
 }

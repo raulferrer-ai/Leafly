@@ -13,15 +13,18 @@ import SwiftData
 struct RootView: View {
     private let repository: any PlantRepository
     private let reminders: any WateringReminderScheduling
+    private let settingsViewModel: SettingsViewModel
 
     @Query private var plants: [PlantEntity]
 
     init(
         repository: any PlantRepository,
-        reminders: any WateringReminderScheduling
+        reminders: any WateringReminderScheduling,
+        settingsViewModel: SettingsViewModel
     ) {
         self.repository = repository
         self.reminders = reminders
+        self.settingsViewModel = settingsViewModel
     }
 
     var body: some View {
@@ -30,8 +33,12 @@ struct RootView: View {
                 OnboardingFlowView(repository: repository)
                     .transition(.opacity)
             } else {
-                PlantsHomeView(repository: repository, reminders: reminders)
-                    .transition(.opacity)
+                PlantsHomeView(
+                    repository: repository,
+                    reminders: reminders,
+                    settingsViewModel: settingsViewModel
+                )
+                .transition(.opacity)
             }
         }
         .animation(.easeInOut(duration: 0.45), value: plants.isEmpty)

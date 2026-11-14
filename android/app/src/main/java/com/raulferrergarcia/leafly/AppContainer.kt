@@ -5,6 +5,7 @@ import androidx.room.Room
 import com.raulferrergarcia.leafly.data.local.LeaflyDatabase
 import com.raulferrergarcia.leafly.data.notifications.AlarmManagerWateringAlarmScheduler
 import com.raulferrergarcia.leafly.data.notifications.WateringReminderService
+import com.raulferrergarcia.leafly.data.repository.NotificationPreferencesRepository
 import com.raulferrergarcia.leafly.data.repository.RoomPlantRepository
 import com.raulferrergarcia.leafly.domain.repository.PlantRepository
 import com.raulferrergarcia.leafly.domain.scheduling.WateringReminderScheduling
@@ -34,6 +35,9 @@ class AppContainer(context: Context) {
     private val wateringReminders: WateringReminderScheduling = WateringReminderService(
         alarmScheduler = AlarmManagerWateringAlarmScheduler(context.applicationContext),
     )
+
+    val notificationPreferencesRepository: NotificationPreferencesRepository =
+        NotificationPreferencesRepository(context.applicationContext)
 
     val observePlants: ObservePlantsUseCase = ObservePlantsUseCase(plantRepository)
     val addPlant: AddPlantUseCase = AddPlantUseCase(plantRepository)

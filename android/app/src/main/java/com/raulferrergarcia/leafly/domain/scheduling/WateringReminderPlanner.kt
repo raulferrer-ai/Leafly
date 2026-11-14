@@ -1,10 +1,10 @@
 package com.raulferrergarcia.leafly.domain.scheduling
 
+import com.raulferrergarcia.leafly.domain.model.NotificationPreferences
 import com.raulferrergarcia.leafly.domain.model.Plant
 import com.raulferrergarcia.leafly.domain.model.WateringReminder
 import com.raulferrergarcia.leafly.domain.model.WateringStatus
 import com.raulferrergarcia.leafly.domain.model.wateringStatus
-import java.time.Instant
 import java.time.ZoneId
 
 /**
@@ -15,13 +15,16 @@ import java.time.ZoneId
  *
  * Sigue el mismo criterio que iOS:
  * - Solo `NEEDS_WATER_SOON` y `NEEDS_WATER_NOW` generan recordatorio.
- * - Se entrega en el próximo hueco de las 10:00 locales con al menos una hora
+ * - Se entrega en el próximo hueco de la hora preferida con al menos una hora
  *   de margen; si ese hueco ya pasó, mañana a la misma hora.
  */
 object WateringReminderPlanner {
 
-    /** Hora local a la que se entregan los recordatorios. */
-    const val REMINDER_HOUR = 10
+    /** Hora local por defecto a la que se entregan los recordatorios. */
+    const val DEFAULT_REMINDER_HOUR = 10
+
+    /** Minuto local por defecto a la que se entregan los recordatorios. */
+    const val DEFAULT_REMINDER_MINUTE = 0
 
     /** Margen mínimo para no enviar una notificación casi inmediata. */
     const val MINIMUM_LEAD_MILLIS: Long = 60L * 60L * 1000L
@@ -31,8 +34,13 @@ object WateringReminderPlanner {
         plants: List<Plant>,
         nowMillis: Long = System.currentTimeMillis(),
         zoneId: ZoneId = ZoneId.systemDefault(),
+        preferences: NotificationPreferences = NotificationPreferences.Default,
     ): List<WateringReminder> {
-        val fireAtMillis = nextReminderTimeMillis(nowMillis, zoneId)
+        val fireAtMillis = nextReminderTimeMillis(
+            nowMillis = nowMillis,
+            zoneId = zoneId,
+            preferences = preferences,
+        )
 
         return plants.mapNotNull { plant ->
             val status = plant.wateringStatus(nowMillis, zoneId)
@@ -49,15 +57,16 @@ object WateringReminderPlanner {
         }
     }
 
-    /** Próxima mañana tranquila (10:00), con al menos una hora de margen. */
+    /** Próxima franja tranquila a la hora preferida, con al menos una hora de margen. */
     fun nextReminderTimeMillis(
         nowMillis: Long,
         zoneId: ZoneId = ZoneId.systemDefault(),
+        preferences: NotificationPreferences = NotificationPreferences.Default,
     ): Long {
-        val now = Instant.ofEpochMilli(nowMillis).atZone(zoneId)
+        val now = java.time.Instant.ofEpochMilli(nowMillis).atZone(zoneId)
         val todaySlot = now
             .toLocalDate()
-            .atTime(REMINDER_HOUR, 0)
+            .atTime(preferences.hour, preferences.minute)
             .atZone(zoneId)
 
         val todayMillis = todaySlot.toInstant().toEpochMilli()

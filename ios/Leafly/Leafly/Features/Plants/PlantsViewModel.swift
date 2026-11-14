@@ -62,7 +62,12 @@ final class PlantsViewModel {
             isLoading = false
 
             // Recalcula los recordatorios según el estado de riego actual.
-            await reminders.sync(plants: loadedPlants)
+            let preferences = NotificationPreferences.stored()
+            await reminders.sync(
+                plants: loadedPlants,
+                preferredHour: preferences.hour,
+                preferredMinute: preferences.minute
+            )
         } catch {
             isLoading = false
             errorMessage = "No hemos podido cargar tus plantas. Inténtalo de nuevo."
@@ -75,7 +80,12 @@ final class PlantsViewModel {
         guard let index = plants.firstIndex(where: { $0.id == plant.id }) else { return }
         plants[index] = plant
 
-        await reminders.sync(plants: plants)
+        let preferences = NotificationPreferences.stored()
+        await reminders.sync(
+            plants: plants,
+            preferredHour: preferences.hour,
+            preferredMinute: preferences.minute
+        )
     }
 
     // MARK: - Búsqueda y filtros

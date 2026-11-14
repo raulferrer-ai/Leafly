@@ -1,6 +1,7 @@
 package com.raulferrergarcia.leafly.features.plants
 
 import app.cash.turbine.test
+import com.raulferrergarcia.leafly.domain.model.NotificationPreferences
 import com.raulferrergarcia.leafly.domain.model.Plant
 import com.raulferrergarcia.leafly.domain.model.PlantPhoto
 import com.raulferrergarcia.leafly.domain.repository.PlantNotFoundException
@@ -182,7 +183,7 @@ private class FakeWateringReminderScheduling : WateringReminderScheduling {
     val cancelledPlantIds = mutableListOf<String>()
     var failOnSync: Boolean = false
 
-    override suspend fun sync(plants: List<Plant>) {
+    override suspend fun sync(plants: List<Plant>, preferences: NotificationPreferences) {
         if (failOnSync) throw IOException("No se pudieron programar los recordatorios")
         syncedPlants.add(plants)
     }

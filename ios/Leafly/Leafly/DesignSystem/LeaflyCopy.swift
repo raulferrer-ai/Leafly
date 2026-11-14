@@ -65,4 +65,26 @@ enum LeaflyCopy {
             static let message = "No hemos podido guardar la foto. Inténtalo de nuevo."
         }
     }
+
+    // MARK: - Ajustes de notificaciones
+
+    enum Notifications {
+        static let title = "Ajustes de riego"
+        static let subtitle = "Elige a qué hora quieres que te avisemos cuando una planta necesite agua."
+
+        /// Estado del permiso.
+        enum Permission {
+            static let title = "Permiso de notificaciones"
+            static let granted = "Los avisos están activados."
+            static let denied = "Los avisos están desactivados."
+            static let notDetermined = "Aún no se ha decidido sobre los avisos."
+            static let openSettings = "Abrir ajustes del sistema"
+        }
+
+        /// Hora preferida.
+        enum Time {
+            static let title = "Hora del aviso"
+            static let subtitle = "Te avisaremos a esta hora cuando una planta necesite riego."
+        }
+    }
 }

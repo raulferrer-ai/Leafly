@@ -1,5 +1,6 @@
 package com.raulferrergarcia.leafly.domain.usecase
 
+import com.raulferrergarcia.leafly.domain.model.NotificationPreferences
 import com.raulferrergarcia.leafly.domain.model.Plant
 import com.raulferrergarcia.leafly.domain.scheduling.WateringReminderScheduling
 
@@ -12,7 +13,10 @@ import com.raulferrergarcia.leafly.domain.scheduling.WateringReminderScheduling
 class SyncWateringRemindersUseCase(
     private val reminders: WateringReminderScheduling,
 ) {
-    suspend operator fun invoke(plants: List<Plant>) {
-        reminders.sync(plants)
+    suspend operator fun invoke(
+        plants: List<Plant>,
+        preferences: NotificationPreferences = NotificationPreferences.Default,
+    ) {
+        reminders.sync(plants, preferences)
     }
 }

@@ -1,5 +1,6 @@
 package com.raulferrergarcia.leafly.data.notifications
 
+import com.raulferrergarcia.leafly.domain.model.NotificationPreferences
 import com.raulferrergarcia.leafly.domain.model.Plant
 import com.raulferrergarcia.leafly.domain.model.WateringReminder
 import com.raulferrergarcia.leafly.domain.scheduling.WateringAlarmScheduler
@@ -40,7 +41,7 @@ class WateringReminderServiceTest {
             Plant(name = "Urgente", lastWateredAt = millis(day = 1)),
         )
 
-        service(scheduler, now = millis(day = 9)).sync(plants)
+        service(scheduler, now = millis(day = 9)).sync(plants, NotificationPreferences())
 
         assertEquals(listOf("Pronto", "Urgente"), scheduler.scheduled.map { it.plantName })
     }
@@ -53,7 +54,7 @@ class WateringReminderServiceTest {
             Plant(name = "Urgente", lastWateredAt = millis(day = 1)),
         )
 
-        service(scheduler, now = millis(day = 9)).sync(plants)
+        service(scheduler, now = millis(day = 9)).sync(plants, NotificationPreferences())
 
         assertEquals(plants.map { it.id }.toSet(), scheduler.cancelled.toSet())
     }
@@ -63,7 +64,7 @@ class WateringReminderServiceTest {
         val scheduler = FakeAlarmScheduler()
         val plants = listOf(Plant(name = "Al día", lastWateredAt = millis(day = 9)))
 
-        service(scheduler, now = millis(day = 9)).sync(plants)
+        service(scheduler, now = millis(day = 9)).sync(plants, NotificationPreferences())
 
         assertTrue(scheduler.scheduled.isEmpty())
         assertEquals(listOf(plants.single().id), scheduler.cancelled)
@@ -78,7 +79,7 @@ class WateringReminderServiceTest {
         )
 
         val now = millis(day = 9)
-        service(scheduler, now = now).sync(plants)
+        service(scheduler, now = now).sync(plants, NotificationPreferences())
 
         val expectedFireAt = WateringReminderPlanner.nextReminderTimeMillis(now, zone)
         assertEquals(
@@ -111,6 +112,7 @@ class WateringReminderServiceTest {
 
         service(scheduler, now = millis(day = 9)).sync(
             listOf(Plant(name = "Urgente", lastWateredAt = millis(day = 1))),
+            NotificationPreferences(),
         )
 
         assertTrue(scheduler.scheduled.isEmpty())

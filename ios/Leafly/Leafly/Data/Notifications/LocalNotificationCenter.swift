@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import UserNotifications
 
 /// Abstracción mínima de las notificaciones locales.
 ///
@@ -15,6 +16,9 @@ import Foundation
 protocol LocalNotificationCenter {
     /// Pide permiso al sistema. Devuelve `false` si no se concede.
     func requestAuthorization() async -> Bool
+
+    /// Devuelve el estado actual de autorización sin solicitarlo.
+    func currentAuthorizationStatus() async -> UNAuthorizationStatus
 
     /// Identificadores pendientes que empiezan por `prefix`.
     func pendingIdentifiers(withPrefix prefix: String) async -> [String]

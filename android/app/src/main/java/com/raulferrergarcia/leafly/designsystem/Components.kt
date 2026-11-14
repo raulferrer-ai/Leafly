@@ -215,7 +215,7 @@ fun LeaflyPrimaryButton(
 @Composable
 fun LeaflyQuietButton(
     text: String,
-    icon: ImageVector,
+    icon: ImageVector? = null,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
@@ -242,13 +242,15 @@ fun LeaflyQuietButton(
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            tint = contentColor,
-            modifier = Modifier.size(18.dp),
-        )
-        Spacer(modifier = Modifier.width(LeaflySpacing.xs))
+        if (icon != null) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = contentColor,
+                modifier = Modifier.size(18.dp),
+            )
+            Spacer(modifier = Modifier.width(LeaflySpacing.xs))
+        }
         Text(
             text = text,
             color = contentColor,

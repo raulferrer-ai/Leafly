@@ -61,4 +61,29 @@ object LeaflyCopy {
             val message = "No hemos podido guardar la foto. Inténtalo de nuevo."
         }
     }
+
+    // MARK: - Ajustes de notificaciones
+
+    object Notifications {
+        /** Título de la pantalla de ajustes. */
+        val title = "Ajustes de riego"
+
+        /** Subtítulo explicativo. */
+        val subtitle = "Elige a qué hora quieres que te avisemos cuando una planta necesite agua."
+
+        /** Estado del permiso. */
+        object Permission {
+            val title = "Permiso de notificaciones"
+            val granted = "Los avisos están activados."
+            val denied = "Los avisos están desactivados."
+            val notDetermined = "Aún no se ha decidido sobre los avisos."
+            val openSettings = "Abrir ajustes del sistema"
+        }
+
+        /** Hora preferida. */
+        object Time {
+            val title = "Hora del aviso"
+            val subtitle = "Te avisaremos a esta hora cuando una planta necesite riego."
+        }
+    }
 }

@@ -1,5 +1,6 @@
 package com.raulferrergarcia.leafly.data.notifications
 
+import com.raulferrergarcia.leafly.domain.model.NotificationPreferences
 import com.raulferrergarcia.leafly.domain.model.Plant
 import com.raulferrergarcia.leafly.domain.model.WateringReminder
 import com.raulferrergarcia.leafly.domain.scheduling.WateringAlarmScheduler
@@ -22,13 +23,17 @@ class WateringReminderService(
     private val zoneId: () -> ZoneId = ZoneId::systemDefault,
 ) : WateringReminderScheduling {
 
-    override suspend fun sync(plants: List<Plant>) {
+    override suspend fun sync(
+        plants: List<Plant>,
+        preferences: NotificationPreferences,
+    ) {
         plants.forEach { plant -> cancelSafely(plant.id) }
 
         val reminders = WateringReminderPlanner.remindersFor(
             plants = plants,
             nowMillis = now(),
             zoneId = zoneId(),
+            preferences = preferences,
         )
         reminders.forEach(::scheduleSafely)
     }

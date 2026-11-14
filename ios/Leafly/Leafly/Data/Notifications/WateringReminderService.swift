@@ -33,11 +33,17 @@ final class WateringReminderService: WateringReminderScheduling {
         self.calendar = calendar
     }
 
-    func sync(plants: [Plant]) async {
+    func sync(
+        plants: [Plant],
+        preferredHour: Int,
+        preferredMinute: Int
+    ) async {
         let reminders = WateringReminderPlanner.reminders(
             for: plants,
             now: now(),
-            calendar: calendar
+            calendar: calendar,
+            preferredHour: preferredHour,
+            preferredMinute: preferredMinute
         )
 
         await removeStaleReminders(keeping: reminders)

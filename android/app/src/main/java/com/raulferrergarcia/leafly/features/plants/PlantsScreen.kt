@@ -32,6 +32,7 @@ import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Eco
+import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.rounded.Warning
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -45,6 +46,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -80,6 +82,7 @@ import com.raulferrergarcia.leafly.domain.model.Plant
 import com.raulferrergarcia.leafly.domain.model.PlantType
 import com.raulferrergarcia.leafly.domain.model.WateringStatus
 import com.raulferrergarcia.leafly.domain.model.wateringStatus
+import com.raulferrergarcia.leafly.data.repository.NotificationPreferencesRepository
 import com.raulferrergarcia.leafly.domain.repository.PlantRepository
 import com.raulferrergarcia.leafly.domain.usecase.AddPlantUseCase
 import com.raulferrergarcia.leafly.domain.usecase.CancelWateringReminderUseCase
@@ -89,6 +92,7 @@ import com.raulferrergarcia.leafly.domain.usecase.SyncWateringRemindersUseCase
 import com.raulferrergarcia.leafly.features.onboarding.AddPlantMode
 import com.raulferrergarcia.leafly.features.onboarding.AddPlantScreen
 import com.raulferrergarcia.leafly.features.onboarding.AddPlantViewModel
+import com.raulferrergarcia.leafly.features.settings.SettingsScreen
 
 /**
  * Jardín: lista de todas las plantas con su estado de riego.
@@ -103,18 +107,22 @@ fun PlantsScreen(
     syncWateringReminders: SyncWateringRemindersUseCase,
     cancelWateringReminder: CancelWateringReminderUseCase,
     plantRepository: PlantRepository,
+    notificationPreferencesRepository: NotificationPreferencesRepository,
     modifier: Modifier = Modifier,
 ) {
     val plantsViewModel: PlantsViewModel = viewModel(
         factory = PlantsViewModel.factory(
             plantRepository = plantRepository,
             syncWateringReminders = syncWateringReminders,
+            preferencesRepository = notificationPreferencesRepository,
         ),
     )
     val uiState by plantsViewModel.uiState.collectAsStateWithLifecycle()
     val navController = rememberNavController()
 
     RequestWateringNotificationPermission(plants = uiState.plants)
+
+    var isShowingSettings by remember { mutableStateOf(false) }
 
     NavHost(
         navController = navController,
@@ -130,6 +138,20 @@ fun PlantsScreen(
                 onSearchTextChange = plantsViewModel::setSearchText,
                 onStatusFilterChange = plantsViewModel::setStatusFilter,
                 onClearFilters = plantsViewModel::clearFilters,
+                onOpenSettings = { isShowingSettings = true },
+            )
+        }
+
+        composable(PlantsRoute.SETTINGS) {
+            SettingsScreen(
+                plants = uiState.plants,
+                onSavePreferredTime = { hour, minute ->
+                    plantsViewModel.setPreferredTime(hour = hour, minute = minute)
+                    navController.popBackStack()
+                },
+                onOpenSystemSettings = {},
+                syncWateringReminders = syncWateringReminders,
+                preferencesRepository = notificationPreferencesRepository,
             )
         }
 
@@ -368,6 +390,7 @@ private fun PlantsListScreen(
     onSearchTextChange: (String) -> Unit,
     onStatusFilterChange: (WateringStatus) -> Unit,
     onClearFilters: () -> Unit,
+    onOpenSettings: () -> Unit,
 ) {
     LeaflyScreen {
         Box(
@@ -393,6 +416,7 @@ private fun PlantsListScreen(
                         plantsCount = uiState.filteredPlants.size,
                         hasFilters = uiState.hasActiveFilters,
                         onAddPlant = onAddPlant,
+                        onOpenSettings = onOpenSettings,
                     )
                     Spacer(modifier = Modifier.height(LeaflySpacing.sm))
                 }
@@ -566,6 +590,7 @@ private fun Header(
     plantsCount: Int,
     hasFilters: Boolean = false,
     onAddPlant: () -> Unit,
+    onOpenSettings: () -> Unit,
 ) {
     val subtitle = when {
         hasFilters -> stringResource(R.string.plants_search_results_count, plantsCount)
@@ -606,6 +631,12 @@ private fun Header(
             contentDescription = stringResource(R.string.plants_add_plant),
             onClick = onAddPlant,
         )
+
+        LeaflyCircularIconButton(
+            icon = Icons.Rounded.Settings,
+            contentDescription = stringResource(R.string.plants_settings),
+            onClick = onOpenSettings,
+        )
     }
 }
 
@@ -639,6 +670,7 @@ private fun MissingPlantContent(
 private object PlantsRoute {
     const val LIST = "plants"
     const val ADD_PLANT = "add-plant"
+    const val SETTINGS = "settings"
     const val PLANT_ID_ARG = "plantId"
     const val DETAIL = "plant/{$PLANT_ID_ARG}"
 
@@ -678,6 +710,7 @@ private fun PlantsScreenPreview() {
             onSearchTextChange = {},
             onStatusFilterChange = {},
             onClearFilters = {},
+            onOpenSettings = {},
         )
     }
 }
