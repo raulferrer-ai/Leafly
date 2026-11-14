@@ -11,9 +11,11 @@ import SwiftUI
 /// principal para marcarla como regada.
 struct PlantDetailView: View {
     private let onPlantUpdated: @MainActor (Plant) async -> Void
+    private let repository: any PlantRepository
 
     @State private var viewModel: PlantDetailViewModel
     @Environment(\.dismiss) private var dismiss
+    @State private var isShowingEdit = false
 
     init(
         plant: Plant,
@@ -22,6 +24,7 @@ struct PlantDetailView: View {
         onPlantUpdated: @escaping @MainActor (Plant) async -> Void = { _ in }
     ) {
         self.onPlantUpdated = onPlantUpdated
+        self.repository = repository
         _viewModel = State(
             initialValue: PlantDetailViewModel(
                 plant: plant,
@@ -61,6 +64,20 @@ struct PlantDetailView: View {
         .task {
             await viewModel.loadPhotoHistory()
         }
+        .sheet(isPresented: $isShowingEdit) {
+            AddPlantView(
+                repository: repository,
+                onCancel: { isShowingEdit = false },
+                onSaved: {
+                    isShowingEdit = false
+                    Task {
+                        await viewModel.reloadPlant()
+                        await onPlantUpdated(viewModel.plant)
+                    }
+                },
+                editingPlant: viewModel.plant
+            )
+        }
     }
 
     // MARK: - Cabecera
@@ -76,6 +93,14 @@ struct PlantDetailView: View {
             .accessibilityLabel("Volver a mis plantas")
 
             Spacer()
+
+            Button {
+                isShowingEdit = true
+            } label: {
+                Image(systemName: "pencil")
+            }
+            .buttonStyle(LeaflyCircularButtonStyle())
+            .accessibilityLabel("Editar planta")
         }
     }
 

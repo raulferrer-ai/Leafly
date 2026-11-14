@@ -15,6 +15,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.Warning
 import androidx.compose.material.icons.rounded.WaterDrop
 import androidx.compose.material3.Icon
@@ -23,6 +24,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -30,6 +34,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.raulferrergarcia.leafly.R
 import com.raulferrergarcia.leafly.designsystem.LeaflyCard
 import com.raulferrergarcia.leafly.designsystem.LeaflyCircularIconButton
@@ -47,6 +52,11 @@ import com.raulferrergarcia.leafly.domain.model.Plant
 import com.raulferrergarcia.leafly.domain.model.PlantType
 import com.raulferrergarcia.leafly.domain.model.WateringStatus
 import com.raulferrergarcia.leafly.domain.model.wateringStatus
+import com.raulferrergarcia.leafly.domain.usecase.AddPlantUseCase
+import com.raulferrergarcia.leafly.domain.usecase.EditPlantUseCase
+import com.raulferrergarcia.leafly.features.onboarding.AddPlantScreen
+import com.raulferrergarcia.leafly.features.onboarding.AddPlantViewModel
+import com.raulferrergarcia.leafly.features.onboarding.AddPlantMode
 
 /**
  * Detalle de una planta: su información, su estado de riego y la acción
@@ -57,9 +67,19 @@ fun PlantDetailScreen(
     viewModel: PlantDetailViewModel,
     onBack: () -> Unit,
     onAddPhoto: (ByteArray) -> Unit = {},
+    onEditPlant: (Plant) -> Unit = {},
+    addPlant: AddPlantUseCase,
+    editPlant: EditPlantUseCase,
     modifier: Modifier = Modifier,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val plant = uiState.plant
+
+    val addPlantViewModel: AddPlantViewModel = viewModel(
+        factory = AddPlantViewModel.factory(addPlant, editPlant),
+    )
+
+    var isShowingEdit by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         viewModel.loadPhotoHistory()
@@ -71,8 +91,26 @@ fun PlantDetailScreen(
         onWater = viewModel::markAsWatered,
         onAddPhoto = onAddPhoto,
         onRetry = { viewModel.loadPhotoHistory() },
+        onEditPlant = {
+            isShowingEdit = true
+        },
         modifier = modifier,
     )
+
+    if (isShowingEdit) {
+        AddPlantScreen(
+            viewModel = addPlantViewModel,
+            onCancel = { isShowingEdit = false },
+            mode = AddPlantMode.EDIT_PLANT,
+            editingPlant = plant,
+            onSaved = {
+                isShowingEdit = false
+                viewModel.reloadPlant()
+                val updatedPlant = viewModel.uiState.value.plant
+                onEditPlant(updatedPlant)
+            },
+        )
+    }
 }
 
 @Composable
@@ -82,6 +120,7 @@ internal fun PlantDetailContent(
     onWater: () -> Unit,
     onAddPhoto: (ByteArray) -> Unit = {},
     onRetry: () -> Unit = {},
+    onEditPlant: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val plant = uiState.plant
@@ -111,7 +150,7 @@ internal fun PlantDetailContent(
                     )
                 }
 
-                Header(plant = plant)
+                Header(plant = plant, onEditPlant = onEditPlant)
 
                 StatusCard(plant = plant, status = status)
 
@@ -140,16 +179,30 @@ internal fun PlantDetailContent(
 }
 
 @Composable
-private fun Header(plant: Plant) {
+private fun Header(
+    plant: Plant,
+    onEditPlant: () -> Unit,
+) {
     Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(LeaflySpacing.xs),
     ) {
-        Text(
-            text = stringResource(R.string.plant_detail_eyebrow),
-            style = MaterialTheme.typography.labelSmall,
-            color = Color.White.copy(alpha = 0.75f),
-        )
+        Row(modifier = Modifier.fillMaxWidth()) {
+            Text(
+                text = stringResource(R.string.plant_detail_eyebrow),
+                style = MaterialTheme.typography.labelSmall,
+                color = Color.White.copy(alpha = 0.75f),
+            )
+
+            Spacer(modifier = Modifier.weight(1f))
+
+            LeaflyCircularIconButton(
+                icon = Icons.Rounded.Edit,
+                contentDescription = stringResource(R.string.plant_detail_edit),
+                onClick = onEditPlant,
+            )
+        }
+
         Text(
             text = plant.name,
             style = MaterialTheme.typography.displayLarge,
@@ -230,6 +283,7 @@ private fun PlantDetailPreview() {
             onBack = {},
             onWater = {},
             onAddPhoto = {},
+            onEditPlant = {},
         )
     }
 }

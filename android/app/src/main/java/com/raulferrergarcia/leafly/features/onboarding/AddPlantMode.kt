@@ -4,7 +4,7 @@ import androidx.annotation.StringRes
 import com.raulferrergarcia.leafly.R
 
 /**
- * Contexto en el que se abre la pantalla de añadir planta.
+ * Contexto en el que se abre la pantalla de añadir o editar planta.
  * Cambia solo los textos, no el comportamiento.
  */
 enum class AddPlantMode(
@@ -27,5 +27,13 @@ enum class AddPlantMode(
         titleRes = R.string.add_plant_another_title,
         subtitleRes = R.string.add_plant_another_subtitle,
         cancelContentDescriptionRes = R.string.add_plant_cancel_another,
+    ),
+
+    /** Edición de una planta existente. */
+    EDIT_PLANT(
+        eyebrowRes = R.string.edit_plant_eyebrow,
+        titleRes = R.string.edit_plant_title,
+        subtitleRes = R.string.edit_plant_subtitle,
+        cancelContentDescriptionRes = R.string.edit_plant_cancel,
     ),
 }

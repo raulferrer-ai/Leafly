@@ -7,7 +7,7 @@
 
 import Foundation
 
-/// Estado y lógica de la pantalla de añadir planta.
+/// Estado y lógica de la pantalla de añadir y editar planta.
 @MainActor
 @Observable
 final class AddPlantViewModel {
@@ -16,6 +16,9 @@ final class AddPlantViewModel {
     var selectedType: PlantType?
     /// Foto elegida para la planta. Se mantiene solo en memoria hasta guardar.
     private(set) var photoData: Data?
+
+    /// Planta que se está editando, si hay una. `nil` en modo alta.
+    private(set) var editingPlant: Plant?
 
     private(set) var nameError: String?
     private(set) var saveError: String?
@@ -52,6 +55,14 @@ final class AddPlantViewModel {
         nameError = nil
     }
 
+    /// Precarga los datos de una planta existente para editarla.
+    func load(_ plant: Plant) {
+        name = plant.name
+        selectedType = plant.type
+        photoData = plant.photoData
+        editingPlant = plant
+    }
+
     @discardableResult
     func save() async -> Bool {
         let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -67,6 +78,23 @@ final class AddPlantViewModel {
         saveError = nil
         defer { isSaving = false }
 
+        // Modo edición: actualizar la planta existente preservando id y fechas.
+        if let editingPlant {
+            var updatedPlant = editingPlant
+            updatedPlant.name = trimmedName
+            updatedPlant.type = selectedType
+            updatedPlant.photoData = photoData
+
+            do {
+                try await repository.update(updatedPlant)
+                return true
+            } catch {
+                saveError = "No hemos podido guardar los cambios. Inténtalo de nuevo."
+                return false
+            }
+        }
+
+        // Modo alta: crear nueva planta.
         let plant = Plant(name: trimmedName, type: selectedType, photoData: photoData)
 
         do {

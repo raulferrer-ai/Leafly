@@ -142,13 +142,113 @@ final class AddPlantViewModelTests: XCTestCase {
         XCTAssertFalse(viewModel.isSaving)
         XCTAssertTrue(repository.savedPlants.isEmpty)
     }
+
+    // MARK: - Edición
+
+    func testLoadPrecachesPlantData() async {
+        let repository = MockPlantRepository()
+        let plant = Plant(
+            name: "Monstera",
+            type: .monstera,
+            photoData: Data([0x01, 0x02])
+        )
+        let viewModel = AddPlantViewModel(repository: repository)
+
+        viewModel.load(plant)
+
+        XCTAssertEqual(viewModel.name, "Monstera")
+        XCTAssertEqual(viewModel.selectedType, .monstera)
+        XCTAssertEqual(viewModel.photoData, Data([0x01, 0x02]))
+        XCTAssertEqual(viewModel.editingPlant?.id, plant.id)
+    }
+
+    func testEditSaveUpdatesExistingPlant() async {
+        let repository = MockPlantRepository()
+        let plant = Plant(
+            name: "Monstera",
+            type: .monstera,
+            lastWateredAt: Date.distantPast
+        )
+        repository.savedPlants.append(plant)
+
+        let viewModel = AddPlantViewModel(repository: repository)
+        viewModel.load(plant)
+        viewModel.name = "Monstera Editada"
+        viewModel.selectedType = .ficus
+
+        let didSave = await viewModel.save()
+
+        XCTAssertTrue(didSave)
+        XCTAssertNil(viewModel.saveError)
+        XCTAssertEqual(repository.savedPlants.count, 1)
+        XCTAssertEqual(repository.savedPlants.first?.name, "Monstera Editada")
+        XCTAssertEqual(repository.savedPlants.first?.type, .ficus)
+        // Preserva id y fechas originales
+        XCTAssertEqual(repository.savedPlants.first?.id, plant.id)
+        XCTAssertEqual(repository.savedPlants.first?.lastWateredAt, plant.lastWateredAt)
+    }
+
+    func testEditSaveWithoutNameShowsError() async {
+        let repository = MockPlantRepository()
+        let plant = Plant(name: "Monstera")
+        repository.savedPlants.append(plant)
+        let viewModel = AddPlantViewModel(repository: repository)
+        viewModel.load(plant)
+        viewModel.name = ""
+
+        let didSave = await viewModel.save()
+
+        XCTAssertFalse(didSave)
+        XCTAssertEqual(
+            viewModel.nameError,
+            "Ponle un nombre a tu planta para poder guardarla."
+        )
+        XCTAssertEqual(repository.savedPlants.count, 1)
+        XCTAssertEqual(repository.savedPlants.first?.name, "Monstera")
+    }
+
+    func testEditSaveRepositoryFailureShowsCalmMessage() async {
+        let repository = MockPlantRepository()
+        repository.errorToThrow = MockError.saveFailed
+        let plant = Plant(name: "Monstera")
+        repository.savedPlants.append(plant)
+
+        let viewModel = AddPlantViewModel(repository: repository)
+        viewModel.load(plant)
+        viewModel.name = "Monstera Editada"
+
+        let didSave = await viewModel.save()
+
+        XCTAssertFalse(didSave)
+        XCTAssertEqual(
+            viewModel.saveError,
+            "No hemos podido guardar los cambios. Inténtalo de nuevo."
+        )
+        XCTAssertFalse(viewModel.isSaving)
+    }
+
+    func testEditRemovingPhotoSavesPlantWithoutImage() async {
+        let repository = MockPlantRepository()
+        let plant = Plant(name: "Monstera", photoData: Data([0x01]))
+        repository.savedPlants.append(plant)
+
+        let viewModel = AddPlantViewModel(repository: repository)
+        viewModel.load(plant)
+        viewModel.removePhoto()
+
+        let didSave = await viewModel.save()
+
+        XCTAssertTrue(didSave)
+        XCTAssertNil(viewModel.photoData)
+        XCTAssertNil(repository.savedPlants.first?.photoData)
+    }
 }
 
 // MARK: - Dobles de prueba
 
 @MainActor
 private final class MockPlantRepository: PlantRepository {
-    private(set) var savedPlants: [Plant] = []
+    var savedPlants: [Plant] = []
     var errorToThrow: Error?
 
     func fetchPlants() async throws -> [Plant] {

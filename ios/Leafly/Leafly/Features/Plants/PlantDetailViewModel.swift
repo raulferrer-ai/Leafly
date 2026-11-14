@@ -139,4 +139,17 @@ final class PlantDetailViewModel {
             return false
         }
     }
+
+    /// Vuelve a cargar los datos de la planta desde el repositorio.
+    /// Se usa tras editar la planta para reflejar los cambios en la UI.
+    func reloadPlant() async {
+        do {
+            let plants = try await repository.fetchPlants()
+            if let updated = plants.first(where: { $0.id == plant.id }) {
+                plant = updated
+            }
+        } catch {
+            errorMessage = "No hemos podido cargar los cambios. Inténtalo de nuevo."
+        }
+    }
 }

@@ -48,11 +48,12 @@ enum AddPlantMode {
     }
 }
 
-/// Pantalla para añadir una planta.
+/// Pantalla para añadir o editar una planta.
 struct AddPlantView: View {
     private let onCancel: () -> Void
     private let onSaved: () -> Void
     private let mode: AddPlantMode
+    private let editingPlant: Plant?
 
     @State private var viewModel: AddPlantViewModel
     @State private var hasAppeared = false
@@ -62,16 +63,21 @@ struct AddPlantView: View {
     @State private var cameraMessage: String?
     @FocusState private var isNameFocused: Bool
 
+    /// `true` cuando se está editando una planta existente.
+    private var isEditing: Bool { editingPlant != nil }
+
     init(
         repository: any PlantRepository,
         onCancel: @escaping () -> Void,
         onSaved: @escaping () -> Void = {},
-        mode: AddPlantMode = .firstPlant
+        mode: AddPlantMode = .firstPlant,
+        editingPlant: Plant? = nil
     ) {
         _viewModel = State(initialValue: AddPlantViewModel(repository: repository))
         self.onCancel = onCancel
         self.onSaved = onSaved
         self.mode = mode
+        self.editingPlant = editingPlant
     }
 
     var body: some View {
@@ -101,6 +107,10 @@ struct AddPlantView: View {
             withAnimation(.easeOut(duration: 0.45)) {
                 hasAppeared = true
             }
+
+            if let editingPlant {
+                viewModel.load(editingPlant)
+            }
         }
         .onChange(of: selectedPhotoItem) { _, item in
             guard let item else { return }
@@ -122,7 +132,7 @@ struct AddPlantView: View {
                 Image(systemName: "xmark")
             }
             .buttonStyle(LeaflyCircularButtonStyle())
-            .accessibilityLabel(mode.cancelAccessibilityLabel)
+            .accessibilityLabel(isEditing ? "Cancelar y volver al detalle" : mode.cancelAccessibilityLabel)
 
             Spacer()
 
@@ -141,12 +151,12 @@ struct AddPlantView: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: LeaflySpacing.xs) {
-            Text(mode.title)
+            Text(isEditing ? "Editar planta" : mode.title)
                 .font(LeaflyFont.title)
                 .foregroundStyle(Color.white)
                 .fixedSize(horizontal: false, vertical: true)
 
-            Text(mode.subtitle)
+            Text(isEditing ? "Cambia el nombre, el tipo o la foto cuando quieras." : mode.subtitle)
                 .font(LeaflyFont.body)
                 .foregroundStyle(Color.white.opacity(0.88))
                 .fixedSize(horizontal: false, vertical: true)
@@ -399,7 +409,7 @@ struct AddPlantView: View {
                             .tint(LeaflyColor.onPrimary)
                     }
 
-                    Text(viewModel.isSaving ? "Guardando..." : "Guardar planta")
+                    Text(viewModel.isSaving ? "Guardando..." : isEditing ? "Guardar cambios" : "Guardar planta")
                 }
             }
             .buttonStyle(LeaflyPrimaryButtonStyle())

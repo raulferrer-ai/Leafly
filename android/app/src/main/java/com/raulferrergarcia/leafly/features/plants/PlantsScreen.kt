@@ -86,6 +86,7 @@ import com.raulferrergarcia.leafly.data.repository.NotificationPreferencesReposi
 import com.raulferrergarcia.leafly.domain.repository.PlantRepository
 import com.raulferrergarcia.leafly.domain.usecase.AddPlantUseCase
 import com.raulferrergarcia.leafly.domain.usecase.CancelWateringReminderUseCase
+import com.raulferrergarcia.leafly.domain.usecase.EditPlantUseCase
 import com.raulferrergarcia.leafly.domain.usecase.MarkPlantWateredUseCase
 import com.raulferrergarcia.leafly.domain.usecase.ObservePlantsUseCase
 import com.raulferrergarcia.leafly.domain.usecase.SyncWateringRemindersUseCase
@@ -103,6 +104,7 @@ import com.raulferrergarcia.leafly.features.settings.SettingsScreen
 fun PlantsScreen(
     observePlants: ObservePlantsUseCase,
     addPlant: AddPlantUseCase,
+    editPlant: EditPlantUseCase,
     markPlantWatered: MarkPlantWateredUseCase,
     syncWateringReminders: SyncWateringRemindersUseCase,
     cancelWateringReminder: CancelWateringReminderUseCase,
@@ -194,6 +196,12 @@ fun PlantsScreen(
                     onAddPhoto = { data ->
                         detailViewModel.addPhoto(data)
                     },
+                    onEditPlant = { updatedPlant ->
+                        // La lista se entera por Room; al volver ya muestra el estado actualizado.
+                        navController.popBackStack()
+                    },
+                    addPlant = addPlant,
+                    editPlant = editPlant,
                 )
             } else {
                 MissingPlantContent(

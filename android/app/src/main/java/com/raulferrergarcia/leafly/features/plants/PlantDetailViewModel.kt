@@ -149,4 +149,28 @@ class PlantDetailViewModel(
             }
         }
     }
+
+    /**
+     * Vuelve a cargar los datos de la planta desde el repositorio.
+     * Se usa tras editar la planta para reflejar los cambios en la UI.
+     */
+    fun reloadPlant() {
+        viewModelScope.launch {
+            try {
+                val plants = repository.observePlants().first()
+                val updated = plants.firstOrNull { it.id == plant.id }
+                if (updated != null) {
+                    _uiState.update { state ->
+                        state.copy(plant = updated)
+                    }
+                }
+            } catch (cancellation: CancellationException) {
+                throw cancellation
+            } catch (error: Exception) {
+                _uiState.update { state ->
+                    state.copy(saveError = PlantDetailSaveError.SaveFailed)
+                }
+            }
+        }
+    }
 }

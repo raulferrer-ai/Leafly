@@ -106,4 +106,12 @@
     <string name="add_plant_another_title">Añade una planta</string>
     <string name="add_plant_another_subtitle">Solo necesitas un nombre. Podrás completar el resto más adelante.</string>
     <string name="add_plant_cancel_another">Cancelar y volver a mis plantas</string>
+
+    <!-- Editar planta -->
+    <string name="edit_plant_eyebrow">EDICIÓN</string>
+    <string name="edit_plant_title">Editar planta</string>
+    <string name="edit_plant_subtitle">Cambia el nombre, el tipo o la foto cuando quieras.</string>
+    <string name="edit_plant_cancel">Cancelar y volver al detalle</string>
+    <string name="edit_plant_save">Guardar cambios</string>
+    <string name="plant_detail_edit">Editar planta</string>
 </resources>

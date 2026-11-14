@@ -97,5 +97,16 @@
         ],
         "priority": 9,
         "spec": "features/09-settings-notifications.feature"
+    },
+    {
+        "id": "edit-plant",
+        "title": "Editar planta (nombre, tipo y foto)",
+        "status": "done",
+        "platforms": [
+            "ios",
+            "android"
+        ],
+        "priority": 10,
+        "spec": "features/10-edit-plant.feature"
     }
 ]

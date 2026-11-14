@@ -7,6 +7,7 @@ import com.raulferrergarcia.leafly.domain.model.PlantType
 import com.raulferrergarcia.leafly.domain.repository.PlantNotFoundException
 import com.raulferrergarcia.leafly.domain.repository.PlantRepository
 import com.raulferrergarcia.leafly.domain.usecase.AddPlantUseCase
+import com.raulferrergarcia.leafly.domain.usecase.EditPlantUseCase
 import java.io.IOException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -289,6 +290,131 @@ class AddPlantViewModelTest {
             cancelAndIgnoreRemainingEvents()
         }
     }
+
+    // MARK: - Edición
+
+    @Test
+    fun `load precaches plant data for editing`() = runTest(dispatcher) {
+        val repository = FakePlantRepository()
+        val viewModel = createViewModel(repository)
+        val plant = Plant(
+            id = "plant-123",
+            name = "Monstera",
+            type = PlantType.MONSTERA,
+            photoData = byteArrayOf(1, 2, 3),
+            lastWateredAt = System.currentTimeMillis() - 86_400_000,
+        )
+
+        viewModel.load(plant)
+
+        val state = viewModel.uiState.value
+        assertEquals("Monstera", state.name)
+        assertEquals(PlantType.MONSTERA, state.selectedType)
+        assertTrue(byteArrayOf(1, 2, 3).contentEquals(state.photoData))
+        assertEquals(plant, state.editingPlant)
+    }
+
+    @Test
+    fun `edit save updates existing plant preserving id and dates`() = runTest(dispatcher) {
+        val repository = FakePlantRepository()
+        val viewModel = AddPlantViewModel(
+            AddPlantUseCase(repository),
+            FakeEditPlantUseCase(repository),
+        )
+        val plant = Plant(
+            id = "plant-123",
+            name = "Monstera",
+            type = PlantType.MONSTERA,
+            createdAt = System.currentTimeMillis() - 172_800_000,
+            lastWateredAt = System.currentTimeMillis() - 86_400_000,
+        )
+        repository.plantsFlow.update { listOf(plant) }
+
+        viewModel.load(plant)
+        viewModel.onNameChange("Monstera Editada")
+        viewModel.toggleType(PlantType.FICUS)
+
+        viewModel.save()
+
+        val state = viewModel.uiState.value
+        assertTrue(state.isSaved)
+        assertFalse(state.isSaving)
+        assertNull(state.nameError)
+        assertNull(state.saveError)
+
+        val updated = repository.plants.single { it.id == "plant-123" }
+        assertEquals("Monstera Editada", updated.name)
+        assertEquals(PlantType.FICUS, updated.type)
+        // Preserva id y fechas originales
+        assertEquals("plant-123", updated.id)
+        assertEquals(plant.createdAt, updated.createdAt)
+        assertEquals(plant.lastWateredAt, updated.lastWateredAt)
+    }
+
+    @Test
+    fun `edit save without name shows error and does not persist`() = runTest(dispatcher) {
+        val repository = FakePlantRepository()
+        val viewModel = AddPlantViewModel(
+            AddPlantUseCase(repository),
+            FakeEditPlantUseCase(repository),
+        )
+        val plant = Plant(id = "plant-123", name = "Monstera")
+        repository.plantsFlow.update { listOf(plant) }
+
+        viewModel.load(plant)
+        viewModel.onNameChange("")
+
+        viewModel.save()
+
+        assertEquals(AddPlantError.BlankName, viewModel.uiState.value.nameError)
+        assertFalse(viewModel.uiState.value.isSaving)
+        // La planta no debe haberse modificado
+        assertEquals("Monstera", repository.plants.single().name)
+    }
+
+    @Test
+    fun `edit save repository failure shows calm message`() = runTest(dispatcher) {
+        val repository = FakePlantRepository().apply { failOnUpdate = true }
+        val viewModel = AddPlantViewModel(
+            AddPlantUseCase(repository),
+            FakeEditPlantUseCase(repository),
+        )
+        val plant = Plant(id = "plant-123", name = "Monstera")
+        repository.plantsFlow.update { listOf(plant) }
+
+        viewModel.load(plant)
+        viewModel.onNameChange("Monstera Editada")
+        viewModel.save()
+
+        val state = viewModel.uiState.value
+        assertFalse(state.isSaved)
+        assertFalse(state.isSaving)
+        assertEquals(AddPlantError.SaveFailed, state.saveError)
+    }
+
+    @Test
+    fun `edit removing photo saves plant without image`() = runTest(dispatcher) {
+        val repository = FakePlantRepository()
+        val viewModel = AddPlantViewModel(
+            AddPlantUseCase(repository),
+            FakeEditPlantUseCase(repository),
+        )
+        val plant = Plant(
+            id = "plant-123",
+            name = "Monstera",
+            photoData = byteArrayOf(9, 9),
+        )
+        repository.plantsFlow.update { listOf(plant) }
+
+        viewModel.load(plant)
+        viewModel.removePhoto()
+        viewModel.save()
+
+        assertTrue(viewModel.uiState.value.isSaved)
+        assertNull(viewModel.uiState.value.photoData)
+        val updated = repository.plants.single { it.id == "plant-123" }
+        assertNull(updated.photoData)
+    }
 }
 
 /**
@@ -296,12 +422,13 @@ class AddPlantViewModelTest {
  */
 private class FakePlantRepository : PlantRepository {
 
-    private val plantsFlow = MutableStateFlow<List<Plant>>(emptyList())
+    val plantsFlow = MutableStateFlow<List<Plant>>(emptyList())
 
     val plants: List<Plant>
         get() = plantsFlow.value
 
     var failOnAdd: Boolean = false
+    var failOnUpdate: Boolean = false
 
     override fun observePlants(): Flow<List<Plant>> = plantsFlow
 
@@ -311,6 +438,7 @@ private class FakePlantRepository : PlantRepository {
     }
 
     override suspend fun update(plant: Plant) {
+        if (failOnUpdate) throw IOException("No se pudo actualizar")
         plantsFlow.update { current ->
             val index = current.indexOfFirst { it.id == plant.id }
             if (index < 0) {
@@ -325,3 +453,10 @@ private class FakePlantRepository : PlantRepository {
 
     override suspend fun addPhoto(photo: PlantPhoto) {}
 }
+
+/**
+ * Doble de prueba para EditPlantUseCase.
+ */
+private class FakeEditPlantUseCase(
+    private val repository: PlantRepository,
+) : EditPlantUseCase(repository)

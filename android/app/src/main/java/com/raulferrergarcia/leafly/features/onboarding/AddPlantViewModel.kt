@@ -4,8 +4,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import com.raulferrergarcia.leafly.domain.model.Plant
 import com.raulferrergarcia.leafly.domain.model.PlantType
 import com.raulferrergarcia.leafly.domain.usecase.AddPlantUseCase
+import com.raulferrergarcia.leafly.domain.usecase.EditPlantUseCase
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -14,10 +16,11 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 /**
- * Estado y lógica de la pantalla de añadir planta.
+ * Estado y lógica de la pantalla de añadir o editar planta.
  */
 class AddPlantViewModel(
     private val addPlant: AddPlantUseCase,
+    private val editPlant: EditPlantUseCase? = null,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AddPlantUiState())
@@ -81,6 +84,21 @@ class AddPlantViewModel(
     }
 
     /**
+     * Precarga los datos de una planta existente para editarla.
+     * Se llama al abrir la pantalla en modo edición.
+     */
+    fun load(plant: Plant) {
+        _uiState.update { state ->
+            state.copy(
+                name = plant.name,
+                selectedType = plant.type,
+                photoData = plant.photoData,
+                editingPlant = plant,
+            )
+        }
+    }
+
+    /**
      * Deja la pantalla como recién abierta. Se usa al entrar y al cancelar,
      * para que cancelar no conserve ni guarde nada.
      */
@@ -103,11 +121,23 @@ class AddPlantViewModel(
 
         viewModelScope.launch {
             try {
-                addPlant(
-                    name = trimmedName,
-                    type = current.selectedType,
-                    photoData = current.photoData,
-                )
+                if (current.editingPlant != null) {
+                    val editing = current.editingPlant!!
+                    editPlant?.invoke(
+                        plantId = editing.id,
+                        name = trimmedName,
+                        type = current.selectedType,
+                        photoData = current.photoData,
+                        createdAt = editing.createdAt,
+                        lastWateredAt = editing.lastWateredAt,
+                    )
+                } else {
+                    addPlant(
+                        name = trimmedName,
+                        type = current.selectedType,
+                        photoData = current.photoData,
+                    )
+                }
                 _uiState.update { state -> state.copy(isSaving = false, isSaved = true) }
             } catch (cancellation: CancellationException) {
                 throw cancellation
@@ -120,8 +150,11 @@ class AddPlantViewModel(
     }
 
     companion object {
-        fun factory(addPlant: AddPlantUseCase) = viewModelFactory {
-            initializer { AddPlantViewModel(addPlant) }
+        fun factory(
+            addPlant: AddPlantUseCase,
+            editPlant: EditPlantUseCase? = null,
+        ) = viewModelFactory {
+            initializer { AddPlantViewModel(addPlant, editPlant) }
         }
     }
 }

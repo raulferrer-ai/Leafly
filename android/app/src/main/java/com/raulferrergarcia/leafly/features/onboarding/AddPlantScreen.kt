@@ -93,13 +93,14 @@ import com.raulferrergarcia.leafly.designsystem.LeaflySpacing
 import com.raulferrergarcia.leafly.designsystem.NoPlantTypeIcon
 import com.raulferrergarcia.leafly.designsystem.icon
 import com.raulferrergarcia.leafly.designsystem.rememberPlantPhoto
+import com.raulferrergarcia.leafly.domain.model.Plant
 import com.raulferrergarcia.leafly.domain.model.PlantType
 import java.io.File
 import java.io.IOException
 import kotlinx.coroutines.launch
 
 /**
- * Pantalla para añadir una planta.
+ * Pantalla para añadir o editar una planta.
  */
 @Composable
 fun AddPlantScreen(
@@ -107,6 +108,7 @@ fun AddPlantScreen(
     onCancel: () -> Unit,
     modifier: Modifier = Modifier,
     mode: AddPlantMode = AddPlantMode.FIRST_PLANT,
+    editingPlant: Plant? = null,
     onSaved: () -> Unit = {},
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -230,6 +232,13 @@ fun AddPlantScreen(
     var hasAppeared by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { hasAppeared = true }
 
+    // Si hay una planta para editar, precargamos sus datos al aparecer.
+    LaunchedEffect(editingPlant) {
+        if (editingPlant != null) {
+            viewModel.load(editingPlant)
+        }
+    }
+
     val contentAlpha by animateFloatAsState(
         targetValue = if (hasAppeared) 1f else 0f,
         animationSpec = tween(durationMillis = 450),
@@ -256,6 +265,8 @@ fun AddPlantScreen(
         }
     }
 
+    val isEditing = editingPlant != null
+
     LeaflyScreen(modifier = modifier) {
         Column(
             modifier = Modifier
@@ -277,11 +288,18 @@ fun AddPlantScreen(
                         translationY = contentOffset.toPx()
                     },
             ) {
-                TopBar(onCancel = ::cancel, mode = mode)
+                TopBar(
+                    onCancel = ::cancel,
+                    mode = mode,
+                    isEditing = isEditing,
+                )
 
                 Spacer(modifier = Modifier.height(LeaflySpacing.lg))
 
-                Header(mode = mode)
+                Header(
+                    mode = mode,
+                    isEditing = isEditing,
+                )
 
                 Spacer(modifier = Modifier.height(LeaflySpacing.lg))
 
@@ -327,6 +345,7 @@ fun AddPlantScreen(
                 isProcessingPhoto = uiState.isProcessingPhoto,
                 saveError = uiState.saveError,
                 onSave = viewModel::save,
+                isEditing = isEditing,
             )
         }
     }
@@ -337,14 +356,20 @@ fun AddPlantScreen(
 // ---------------------------------------------------------------------------
 
 @Composable
-private fun TopBar(onCancel: () -> Unit, mode: AddPlantMode) {
+private fun TopBar(
+    onCancel: () -> Unit,
+    mode: AddPlantMode,
+    isEditing: Boolean = false,
+) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         LeaflyCircularIconButton(
             icon = Icons.Rounded.Close,
-            contentDescription = stringResource(mode.cancelContentDescriptionRes),
+            contentDescription = stringResource(
+                if (isEditing) R.string.edit_plant_cancel else mode.cancelContentDescriptionRes,
+            ),
             onClick = onCancel,
         )
 
@@ -361,18 +386,25 @@ private fun TopBar(onCancel: () -> Unit, mode: AddPlantMode) {
 }
 
 @Composable
-private fun Header(mode: AddPlantMode) {
+private fun Header(
+    mode: AddPlantMode,
+    isEditing: Boolean = false,
+) {
     Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(LeaflySpacing.xs),
     ) {
         Text(
-            text = stringResource(mode.titleRes),
+            text = stringResource(
+                if (isEditing) R.string.edit_plant_title else mode.titleRes,
+            ),
             style = MaterialTheme.typography.titleLarge,
             color = Color.White,
         )
         Text(
-            text = stringResource(mode.subtitleRes),
+            text = stringResource(
+                if (isEditing) R.string.edit_plant_subtitle else mode.subtitleRes,
+            ),
             style = MaterialTheme.typography.bodyLarge,
             color = Color.White.copy(alpha = 0.88f),
         )
@@ -731,6 +763,7 @@ private fun SaveSection(
     isProcessingPhoto: Boolean,
     saveError: AddPlantError?,
     onSave: () -> Unit,
+    isEditing: Boolean = false,
 ) {
     LeaflyBottomBar {
         AnimatedVisibility(
@@ -751,7 +784,13 @@ private fun SaveSection(
 
         LeaflyPrimaryButton(
             text = stringResource(
-                if (isSaving) R.string.add_plant_saving else R.string.add_plant_save,
+                if (isSaving) {
+                    R.string.add_plant_saving
+                } else if (isEditing) {
+                    R.string.edit_plant_save
+                } else {
+                    R.string.add_plant_save
+                },
             ),
             onClick = onSave,
             enabled = !isProcessingPhoto,

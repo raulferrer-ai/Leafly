@@ -1,5 +1,6 @@
 package com.raulferrergarcia.leafly.features.onboarding
 
+import com.raulferrergarcia.leafly.domain.model.Plant
 import com.raulferrergarcia.leafly.domain.model.PlantType
 
 /**
@@ -23,7 +24,7 @@ enum class AddPlantPhotoMessage {
 }
 
 /**
- * Estado inmutable de la pantalla de añadir planta.
+ * Estado inmutable de la pantalla de añadir o editar planta.
  */
 data class AddPlantUiState(
     val name: String = "",
@@ -36,4 +37,6 @@ data class AddPlantUiState(
     val saveError: AddPlantError? = null,
     val isSaving: Boolean = false,
     val isSaved: Boolean = false,
+    /** Planta que se está editando, si hay una. `null` en modo alta. */
+    val editingPlant: Plant? = null,
 )
