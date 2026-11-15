@@ -176,6 +176,50 @@ final class PlantDetailViewModelTests: XCTestCase {
         XCTAssertFalse(viewModel.isSaving)
     }
 
+    // MARK: - Eliminar planta
+
+    func testDeletePlantRemovesItFromRepository() async {
+        let plant = Plant(name: "Monstera")
+        let repository = MockPlantDetailRepository(plants: [plant])
+        let viewModel = makeViewModel(plant: plant, repository: repository)
+
+        let didDelete = await viewModel.deletePlant()
+
+        XCTAssertTrue(didDelete)
+        XCTAssertTrue(repository.plants.isEmpty)
+        XCTAssertEqual(repository.deletedPlantIDs, [plant.id])
+        XCTAssertNil(viewModel.errorMessage)
+        XCTAssertFalse(viewModel.isSaving)
+    }
+
+    func testDeletePlantCancelsItsReminder() async {
+        let plant = Plant(name: "Monstera", lastWateredAt: date(daysAgo: 8, from: now))
+        let reminders = MockDetailReminders()
+        let viewModel = makeViewModel(plant: plant, reminders: reminders)
+
+        let didDelete = await viewModel.deletePlant()
+
+        XCTAssertTrue(didDelete)
+        XCTAssertEqual(reminders.cancelledPlantIDs, [plant.id])
+    }
+
+    func testDeletePlantFailureShowsCalmMessage() async {
+        let plant = Plant(name: "Monstera")
+        let repository = MockPlantDetailRepository(plants: [plant])
+        repository.deleteError = MockError.updateFailed
+        let viewModel = makeViewModel(plant: plant, repository: repository)
+
+        let didDelete = await viewModel.deletePlant()
+
+        XCTAssertFalse(didDelete)
+        XCTAssertEqual(repository.plants.count, 1)
+        XCTAssertEqual(
+            viewModel.errorMessage,
+            "No hemos podido eliminar la planta. Inténtalo de nuevo."
+        )
+        XCTAssertFalse(viewModel.isSaving)
+    }
+
     // MARK: - Historial de fotos
 
     func testLoadPhotoHistoryShowsNewestFirst() async {
@@ -339,8 +383,10 @@ final class PlantDetailViewModelTests: XCTestCase {
 private final class MockPlantDetailRepository: PlantRepository {
     var plants: [Plant]
     private(set) var updatedPlants: [Plant] = []
+    private(set) var deletedPlantIDs: [UUID] = []
     private(set) var photosByPlant: [UUID: [PlantPhoto]] = [:]
     var updateError: Error?
+    var deleteError: Error?
     var fetchPhotosError: Error?
     var addPhotoError: Error?
 
@@ -371,6 +417,15 @@ private final class MockPlantDetailRepository: PlantRepository {
 
         plants[index] = plant
         updatedPlants.append(plant)
+    }
+
+    func delete(_ plantID: UUID) async throws {
+        if let deleteError {
+            throw deleteError
+        }
+
+        plants.removeAll { $0.id == plantID }
+        deletedPlantIDs.append(plantID)
     }
 
     func fetchPhotos(for plantID: UUID) async throws -> [PlantPhoto] {

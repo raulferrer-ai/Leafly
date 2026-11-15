@@ -62,6 +62,9 @@ struct PlantsHomeView: View {
                     reminders: reminders,
                     onPlantUpdated: { updatedPlant in
                         await viewModel.replace(updatedPlant)
+                    },
+                    onPlantDeleted: {
+                        await viewModel.load()
                     }
                 )
             }
@@ -441,6 +444,7 @@ private final class PreviewPlantsRepository: PlantRepository {
     func update(_ plant: Plant) async throws {}
     func fetchPhotos(for plantID: UUID) async throws -> [PlantPhoto] { [] }
     func addPhoto(_ photo: PlantPhoto) async throws {}
+    func delete(_ plantID: UUID) async throws {}
 }
 
 @MainActor

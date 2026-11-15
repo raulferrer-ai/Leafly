@@ -114,4 +114,11 @@
     <string name="edit_plant_cancel">Cancelar y volver al detalle</string>
     <string name="edit_plant_save">Guardar cambios</string>
     <string name="plant_detail_edit">Editar planta</string>
+
+    <!-- Eliminar planta -->
+    <string name="plant_detail_delete">Eliminar planta</string>
+    <string name="plant_delete_title">Eliminar planta</string>
+    <string name="plant_delete_message">¿Estás seguro de que quieres eliminar esta planta? Se borrará su historial de fotos y no aparecerá más en tu jardín.</string>
+    <string name="plant_delete_cancel">Cancelar</string>
+    <string name="plant_delete_confirm">Eliminar</string>
 </resources>

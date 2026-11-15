@@ -254,6 +254,51 @@ class PlantDetailViewModelTest {
     }
 
     @Test
+    fun `deletePlant removes plant from repository`() = runTest(dispatcher) {
+        val plant = Plant(name = "Monstera", id = "plant-1")
+        val repository = FakeDetailPlantRepository(listOf(plant))
+        val viewModel = createViewModel(plant, repository)
+
+        var deleted = false
+        viewModel.deletePlant { deleted = true }
+
+        assertTrue(deleted)
+        assertTrue(repository.plantsFlow.value.isEmpty())
+        assertEquals(listOf("plant-1"), repository.deletedPlantIds)
+        assertNull(viewModel.uiState.value.saveError)
+        assertFalse(viewModel.uiState.value.isSaving)
+    }
+
+    @Test
+    fun `deletePlant cancels reminder`() = runTest(dispatcher) {
+        val plant = Plant(name = "Monstera", id = "plant-1", lastWateredAt = now - 8 * DAY_MILLIS)
+        val reminders = FakeDetailWateringReminders()
+        val repository = FakeDetailPlantRepository(listOf(plant))
+        val viewModel = createViewModel(plant, repository, reminders = reminders)
+
+        var deleted = false
+        viewModel.deletePlant { deleted = true }
+
+        assertTrue(deleted)
+        assertEquals(listOf("plant-1"), reminders.cancelledPlantIds)
+    }
+
+    @Test
+    fun `deletePlant failure shows calm error`() = runTest(dispatcher) {
+        val plant = Plant(name = "Monstera", id = "plant-1")
+        val repository = FakeDetailPlantRepository(listOf(plant)).apply { failOnDelete = true }
+        val viewModel = createViewModel(plant, repository)
+
+        var deleted = false
+        viewModel.deletePlant { deleted = true }
+
+        assertFalse(deleted)
+        assertEquals(1, repository.plantsFlow.value.size)
+        assertEquals(PlantDetailSaveError.SaveFailed, viewModel.uiState.value.saveError)
+        assertFalse(viewModel.uiState.value.isSaving)
+    }
+
+    @Test
     fun `state flow emits photo history states`() = runTest(dispatcher) {
         val plant = Plant(name = "Monstera")
         val repo = FakeDetailPlantRepository(listOf(plant))
@@ -335,11 +380,13 @@ private class FakeDetailPlantRepository(
     val plantsFlow = MutableStateFlow(initial)
 
     var failOnUpdate: Boolean = false
+    var failOnDelete: Boolean = false
     var failOnObservePhotos: Boolean = false
     var failOnAddPhoto: Boolean = false
     var gateUpdate: CompletableDeferred<Unit>? = null
     var updateCalls: Int = 0
         private set
+    val deletedPlantIds = mutableListOf<String>()
 
     private val photosByPlant = mutableMapOf<String, MutableList<PlantPhoto>>()
 
@@ -362,6 +409,15 @@ private class FakeDetailPlantRepository(
             }
             current.toMutableList().apply { this[index] = plant }
         }
+    }
+
+    override suspend fun delete(plantId: String) {
+        if (failOnDelete) throw IOException("No se pudo eliminar")
+
+        plantsFlow.update { current ->
+            current.filter { it.id != plantId }
+        }
+        deletedPlantIds.add(plantId)
     }
 
     override fun observePhotos(plantId: String): Flow<List<PlantPhoto>> = flow {

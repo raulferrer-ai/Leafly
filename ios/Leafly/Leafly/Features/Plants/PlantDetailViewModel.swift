@@ -152,4 +152,29 @@ final class PlantDetailViewModel {
             errorMessage = "No hemos podido cargar los cambios. Inténtalo de nuevo."
         }
     }
+
+    /// Elimina la planta y sus fotos asociadas, y cancela sus recordatorios.
+    ///
+    /// - Returns: `true` si la planta se eliminó correctamente.
+    @discardableResult
+    func deletePlant() async -> Bool {
+        guard !isSaving else { return false }
+
+        isSaving = true
+        errorMessage = nil
+        defer { isSaving = false }
+
+        let plantID = plant.id
+
+        do {
+            // Cancela los recordatorios pendientes de esta planta.
+            await reminders.cancelReminder(for: plantID)
+
+            try await repository.delete(plantID)
+            return true
+        } catch {
+            errorMessage = "No hemos podido eliminar la planta. Inténtalo de nuevo."
+            return false
+        }
+    }
 }

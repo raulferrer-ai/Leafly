@@ -39,4 +39,8 @@ interface PlantDao {
     /** Borra todas las fotos de una planta (útil si se borra la planta manualmente). */
     @Query("DELETE FROM plant_photos WHERE plantId = :plantId")
     suspend fun deletePhotosOfPlant(plantId: String)
+
+    /** Borra una planta y sus fotos asociadas (CASCADE por foreign key). */
+    @Query("DELETE FROM plants WHERE id = :id")
+    suspend fun deletePlant(id: String)
 }

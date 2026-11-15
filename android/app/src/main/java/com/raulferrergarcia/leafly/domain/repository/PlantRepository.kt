@@ -28,6 +28,12 @@ interface PlantRepository {
      * Lanza [PlantNotFoundException] si la planta no existe.
      */
     suspend fun addPhoto(photo: PlantPhoto)
+
+    /**
+     * Elimina una planta y sus fotos asociadas (cascade).
+     * Lanza [PlantNotFoundException] si la planta no existe.
+     */
+    suspend fun delete(plantId: String)
 }
 
 /** La planta que se quería actualizar ya no existe. */

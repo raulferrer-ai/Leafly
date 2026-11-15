@@ -200,6 +200,10 @@ fun PlantsScreen(
                         // La lista se entera por Room; al volver ya muestra el estado actualizado.
                         navController.popBackStack()
                     },
+                    onPlantDeleted = {
+                        // La planta se eliminó; volvemos a la lista.
+                        navController.popBackStack()
+                    },
                     addPlant = addPlant,
                     editPlant = editPlant,
                 )

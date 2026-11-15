@@ -49,4 +49,12 @@ class RoomPlantRepository(
         val plantWithPhoto = plantEntity.toDomain().copy(photoData = photo.data)
         plantDao.update(plantWithPhoto.toEntity())
     }
+
+    override suspend fun delete(plantId: String) {
+        // Verificamos que la planta existe antes de borrar.
+        val plantEntity = plantDao.findPlantById(plantId)
+            ?: throw PlantNotFoundException(plantId)
+
+        plantDao.deletePlant(plantId)
+    }
 }

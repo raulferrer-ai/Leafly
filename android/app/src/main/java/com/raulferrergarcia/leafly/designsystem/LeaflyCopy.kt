@@ -86,4 +86,13 @@ object LeaflyCopy {
             val subtitle = "Te avisaremos a esta hora cuando una planta necesite riego."
         }
     }
+
+    // MARK: - Eliminar planta
+
+    object Delete {
+        val title = "Eliminar planta"
+        val message = "¿Estás seguro de que quieres eliminar esta planta? Se borrará su historial de fotos y no aparecerá más en tu jardín."
+        val cancel = "Cancelar"
+        val delete = "Eliminar"
+    }
 }

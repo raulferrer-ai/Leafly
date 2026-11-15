@@ -452,6 +452,11 @@ private class FakePlantRepository : PlantRepository {
         flow<List<PlantPhoto>> { emptyList<PlantPhoto>() }
 
     override suspend fun addPhoto(photo: PlantPhoto) {}
+    override suspend fun delete(plantId: String) {
+        plantsFlow.update { current ->
+            current.filter { it.id != plantId }
+        }
+    }
 }
 
 /**

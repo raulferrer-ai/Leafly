@@ -108,5 +108,13 @@
         ],
         "priority": 10,
         "spec": "features/10-edit-plant.feature"
+    },
+    {
+        "id": "delete-plant",
+        "title": "Eliminar planta con confirmación calmada",
+        "status": "done",
+        "platforms": ["ios", "android"],
+        "priority": 11,
+        "spec": "features/11-delete-plant.feature"
     }
 ]

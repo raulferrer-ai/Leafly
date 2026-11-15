@@ -19,6 +19,8 @@ protocol PlantRepository {
     func fetchPhotos(for plantID: UUID) async throws -> [PlantPhoto]
     /// Añade una foto al historial y la deja como foto principal de la planta.
     func addPhoto(_ photo: PlantPhoto) async throws
+    /// Elimina una planta y sus fotos asociadas (cascade).
+    func delete(_ plantID: UUID) async throws
 }
 
 /// Errores esperables del repositorio de plantas.

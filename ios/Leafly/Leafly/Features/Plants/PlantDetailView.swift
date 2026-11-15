@@ -11,19 +11,23 @@ import SwiftUI
 /// principal para marcarla como regada.
 struct PlantDetailView: View {
     private let onPlantUpdated: @MainActor (Plant) async -> Void
+    private let onPlantDeleted: @MainActor () async -> Void
     private let repository: any PlantRepository
 
     @State private var viewModel: PlantDetailViewModel
     @Environment(\.dismiss) private var dismiss
     @State private var isShowingEdit = false
+    @State private var isShowingDeleteConfirmation = false
 
     init(
         plant: Plant,
         repository: any PlantRepository,
         reminders: any WateringReminderScheduling,
-        onPlantUpdated: @escaping @MainActor (Plant) async -> Void = { _ in }
+        onPlantUpdated: @escaping @MainActor (Plant) async -> Void = { _ in },
+        onPlantDeleted: @escaping @MainActor () async -> Void = { }
     ) {
         self.onPlantUpdated = onPlantUpdated
+        self.onPlantDeleted = onPlantDeleted
         self.repository = repository
         _viewModel = State(
             initialValue: PlantDetailViewModel(
@@ -78,6 +82,24 @@ struct PlantDetailView: View {
                 editingPlant: viewModel.plant
             )
         }
+        .confirmationDialog(
+            LeaflyCopy.Delete.title,
+            isPresented: $isShowingDeleteConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button(LeaflyCopy.Delete.delete, role: .destructive) {
+                Task {
+                    let didDelete = await viewModel.deletePlant()
+                    if didDelete {
+                        dismiss()
+                        await onPlantDeleted()
+                    }
+                }
+            }
+            Button(LeaflyCopy.Delete.cancel, role: .cancel) {}
+        } message: {
+            Text(LeaflyCopy.Delete.message)
+        }
     }
 
     // MARK: - Cabecera
@@ -101,6 +123,14 @@ struct PlantDetailView: View {
             }
             .buttonStyle(LeaflyCircularButtonStyle())
             .accessibilityLabel("Editar planta")
+
+            Button {
+                isShowingDeleteConfirmation = true
+            } label: {
+                Image(systemName: "trash")
+            }
+            .buttonStyle(LeaflyCircularButtonStyle())
+            .accessibilityLabel("Eliminar planta")
         }
     }
 
@@ -261,4 +291,5 @@ private final class PreviewPlantDetailRepository: PlantRepository {
     func update(_ plant: Plant) async throws {}
     func fetchPhotos(for plantID: UUID) async throws -> [PlantPhoto] { [] }
     func addPhoto(_ photo: PlantPhoto) async throws {}
+    func delete(_ plantID: UUID) async throws {}
 }

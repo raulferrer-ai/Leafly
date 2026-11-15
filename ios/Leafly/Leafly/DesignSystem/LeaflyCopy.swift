@@ -87,4 +87,13 @@ enum LeaflyCopy {
             static let subtitle = "Te avisaremos a esta hora cuando una planta necesite riego."
         }
     }
+
+    // MARK: - Eliminar planta
+
+    enum Delete {
+        static let title = "Eliminar planta"
+        static let message = "¿Estás segura de que quieres eliminar esta planta? Se borrarán sus datos y su historial de fotos."
+        static let cancel = "Cancelar"
+        static let delete = "Eliminar"
+    }
 }

@@ -18,6 +18,10 @@ import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.Warning
 import androidx.compose.material.icons.rounded.WaterDrop
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -68,6 +72,7 @@ fun PlantDetailScreen(
     onBack: () -> Unit,
     onAddPhoto: (ByteArray) -> Unit = {},
     onEditPlant: (Plant) -> Unit = {},
+    onPlantDeleted: () -> Unit = {},
     addPlant: AddPlantUseCase,
     editPlant: EditPlantUseCase,
     modifier: Modifier = Modifier,
@@ -80,6 +85,7 @@ fun PlantDetailScreen(
     )
 
     var isShowingEdit by remember { mutableStateOf(false) }
+    var isShowingDeleteConfirmation by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         viewModel.loadPhotoHistory()
@@ -93,6 +99,9 @@ fun PlantDetailScreen(
         onRetry = { viewModel.loadPhotoHistory() },
         onEditPlant = {
             isShowingEdit = true
+        },
+        onDeletePlant = {
+            isShowingDeleteConfirmation = true
         },
         modifier = modifier,
     )
@@ -111,6 +120,49 @@ fun PlantDetailScreen(
             },
         )
     }
+
+    if (isShowingDeleteConfirmation) {
+        AlertDialog(
+            onDismissRequest = { isShowingDeleteConfirmation = false },
+            title = {
+                Text(
+                    text = LeaflyCopy.Delete.title,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+            },
+            text = {
+                Text(
+                    text = LeaflyCopy.Delete.message,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        viewModel.deletePlant {
+                            isShowingDeleteConfirmation = false
+                            onPlantDeleted()
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = LeaflyColors.NeedsWaterNow,
+                        contentColor = Color.White,
+                    ),
+                ) {
+                    Text(text = LeaflyCopy.Delete.delete)
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { isShowingDeleteConfirmation = false },
+                ) {
+                    Text(text = LeaflyCopy.Delete.cancel)
+                }
+            },
+        )
+    }
 }
 
 @Composable
@@ -121,6 +173,7 @@ internal fun PlantDetailContent(
     onAddPhoto: (ByteArray) -> Unit = {},
     onRetry: () -> Unit = {},
     onEditPlant: () -> Unit = {},
+    onDeletePlant: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val plant = uiState.plant
@@ -150,7 +203,7 @@ internal fun PlantDetailContent(
                     )
                 }
 
-                Header(plant = plant, onEditPlant = onEditPlant)
+                Header(plant = plant, onEditPlant = onEditPlant, onDeletePlant = onDeletePlant)
 
                 StatusCard(plant = plant, status = status)
 
@@ -182,6 +235,7 @@ internal fun PlantDetailContent(
 private fun Header(
     plant: Plant,
     onEditPlant: () -> Unit,
+    onDeletePlant: () -> Unit,
 ) {
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -201,6 +255,19 @@ private fun Header(
                 contentDescription = stringResource(R.string.plant_detail_edit),
                 onClick = onEditPlant,
             )
+
+            TextButton(
+                onClick = onDeletePlant,
+                colors = ButtonDefaults.textButtonColors(
+                    contentColor = LeaflyColors.NeedsWaterNow,
+                ),
+            ) {
+                Text(
+                    text = stringResource(R.string.plant_detail_delete),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = LeaflyColors.NeedsWaterNow,
+                )
+            }
         }
 
         Text(
@@ -284,6 +351,7 @@ private fun PlantDetailPreview() {
             onWater = {},
             onAddPhoto = {},
             onEditPlant = {},
+            onDeletePlant = {},
         )
     }
 }

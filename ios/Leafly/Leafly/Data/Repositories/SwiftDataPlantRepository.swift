@@ -88,4 +88,17 @@ final class SwiftDataPlantRepository: PlantRepository {
 
         try context.save()
     }
+
+    func delete(_ plantID: UUID) async throws {
+        let descriptor = FetchDescriptor<PlantEntity>(
+            predicate: #Predicate { $0.id == plantID }
+        )
+
+        guard let plant = try context.fetch(descriptor).first else {
+            throw PlantRepositoryError.plantNotFound
+        }
+
+        context.delete(plant)
+        try context.save()
+    }
 }

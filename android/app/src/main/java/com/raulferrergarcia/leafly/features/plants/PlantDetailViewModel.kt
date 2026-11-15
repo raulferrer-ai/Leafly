@@ -151,6 +151,33 @@ class PlantDetailViewModel(
     }
 
     /**
+     * Elimina la planta y sus fotos asociadas, y cancela su recordatorio.
+     *
+     * - Parameter onDeleted: Se invoca cuando la eliminación se completa con éxito.
+     */
+    fun deletePlant(onDeleted: () -> Unit) {
+        val current = _uiState.value
+        if (current.isSaving) return
+
+        _uiState.update { state -> state.copy(isSaving = true, saveError = null) }
+
+        viewModelScope.launch {
+            try {
+                cancelWateringReminder(current.plant.id)
+                repository.delete(current.plant.id)
+                _uiState.update { state -> state.copy(isSaving = false) }
+                onDeleted()
+            } catch (cancellation: CancellationException) {
+                throw cancellation
+            } catch (error: Exception) {
+                _uiState.update { state ->
+                    state.copy(isSaving = false, saveError = PlantDetailSaveError.SaveFailed)
+                }
+            }
+        }
+    }
+
+    /**
      * Vuelve a cargar los datos de la planta desde el repositorio.
      * Se usa tras editar la planta para reflejar los cambios en la UI.
      */

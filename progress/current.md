@@ -1,17 +1,18 @@
 # Progress — Leafly
 
 ## Estado actual
-edit-plant cerrada en iOS + Android.
+delete-plant cerrada en iOS + Android.
 
 ## Completado recientemente
-### edit-plant → done
-- Edición de nombre, tipo y foto desde el detalle
-- Validación de nombre, cancelar sin guardar, update preservando id/fechas
-- Reutilización del flujo de alta en modo edición
-- Tests en ambas plataformas; sensores en verde
+### delete-plant → done
+- Confirmación calmada desde el detalle
+- Borrado en persistencia (cascade de fotos)
+- Cancelación de recordatorio de esa planta
+- Lista / onboarding coherentes tras borrar
+- Tests y sensores en verde en ambas plataformas
 
 ## Feature actual
 Ninguna.
 
 ## Próximo paso
-delete-plant o watering-log.
+watering-log, accessibility-pass o widget-next-water.
