@@ -141,3 +141,8 @@ No cerrar la sesión solo con el fix de código si el fallo revela un agujero de
 4. Tras ambas plataformas en verde: checklist dual breve de comportamiento.
 5. `./scripts/verify-feature.sh <feature-id>` → solo entonces `status: done`.
 6. Si hay desvío claro de la spec o del design system: corregir y registrar en `progress/flywheel-log.md`.
+
+## Feature workflow (graph)
+
+El camino canónico de una feature (nodos, rutas si falla, puntos de suspensión humanos) está en `docs/workflow.md`.
+Sigue ese grafo. No te saltes sensores, checklist dual ni el gate antes de `done`.
