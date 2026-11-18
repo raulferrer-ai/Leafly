@@ -12,18 +12,19 @@ No es un experimento multiplataforma. Son **dos implementaciones nativas** coord
 
 Durante años, iOS + Android implicaba elegir: dos equipos nativos o una base de código compartida (Flutter, React Native, KMP…).
 
-Leafly explora una tercera vía de trabajo:
+Leafly explora otra vía:
 
 - **Mismo producto** (specs Gherkin, design system, Definition of Done dual)
 - **Código nativo separado** por plataforma
 - **Un agente por sesión**, centrado en una plataforma, guiado por el harness
 
-El objetivo del proyecto es **aprender y documentar harness engineering** aplicado al desarrollo dual nativo — no publicar en las stores.
+El objetivo es **aprender y documentar harness engineering** aplicado al desarrollo dual nativo — no publicar en las stores.
 
-Artículos relacionados:
+**Artículos**
 
-- [Artículo 1 — Harness Engineering for Dual-Native Mobile Development: Beyond AI Coding Assistants](https://raulferrergarcia.com/posts/harness-engineering-for-dual-native-development/harness-engineering-dual-native-mobile/)
-- [Artículo 2 — Endurecer el harness (gates, sensores, flywheel)](https://raulferrergarcia.com/posts/from-declared-done-to-demonstrated-done/from-declared-done-to-demonstrated-done/)
+- [1 — Harness engineering for dual-native mobile](https://raulferrergarcia.com/posts/harness-engineering-for-dual-native-development/harness-engineering-dual-native-mobile/)
+- [2 — From declared done to demonstrated done](URL_ARTICULO_2)
+- [3 — From gate to loop](URL_ARTICULO_3)
 
 ---
 
@@ -33,22 +34,33 @@ Artículos relacionados:
 |------------|------------|
 | **iOS** | Swift 6 · SwiftUI · @Observable · SwiftData |
 | **Android** | Kotlin · Jetpack Compose · ViewModel · StateFlow · Room |
-| **Harness** | `AGENTS.md`, specs Gherkin, `feature_list.json`, `progress/`, gate `verify-feature.sh`, CI |
+| **Harness** | `AGENTS.md`, specs Gherkin, `feature_list.json`, `progress/`, gate, CI |
 
 ---
 
-## Qué hay en el producto (MVP)
+## Versiones
+
+| Tag | Qué representa |
+|-----|----------------|
+| [v1.0-harness-mvp](https://github.com/raulferrer-ai/Leafly/tree/v1.0-harness-mvp) | MVP dual + harness (orientación + gate) |
+| [v2.0-loop-mvp](https://github.com/raulferrer-ai/Leafly/tree/v2.0-loop-mvp) | Cierre en modo Loop: sensor en verde antes de dar plataforma por lista; gate antes de `done` |
+
+En **2.0**, una feature no se marca `done` si el agente solo declara que está lista: hace falta el ciclo build/test y el gate dual.
+
+---
+
+## Qué hay en el producto
 
 - Onboarding y alta de la primera planta
-- Lista con estado de riego (Al día / Riega pronto / Necesita agua)
-- Detalle + «Ya la regué»
-- Recordatorios locales (hora configurable en ajustes)
+- Lista con estado de riego + búsqueda y filtros
+- Detalle, editar, eliminar
+- Ya la regué + historial de riegos (2.0)
+- Recordatorios locales (hora configurable)
 - Foto principal + historial de fotos
-- Búsqueda y filtro por estado
-- Editar y eliminar planta
+- Ajustes de notificaciones
 - Estados vacíos y de error calmados
 
-Todo implementado **en iOS y en Android**, con el mismo contrato de comportamiento.
+Todo en **iOS y Android**, mismo contrato de comportamiento.
 
 ---
 
@@ -56,31 +68,35 @@ Todo implementado **en iOS y en Android**, con el mismo contrato de comportamien
 
 ```text
 leafly/
-├── AGENTS.md                 # Constitución del proyecto (DoD dual, sensores, reglas)
-├── feature_list.json         # Tablero de features y estados
-├── features/                 # Specs Gherkin (fuente de verdad del comportamiento)
-├── progress/                 # Memoria de sesión + flywheel log
+├── AGENTS.md                 # Reglas, DoD dual, sensores, Loop (2.x)
+├── feature_list.json         # Tablero de features
+├── features/                 # Specs Gherkin
+├── progress/                 # Sesión + flywheel log
 ├── docs/
 │   ├── architecture.md
 │   ├── design-system.md
 │   └── flywheel.md
 ├── scripts/
-│   └── verify-feature.sh     # Gate: no "done" sin verificación dual
-├── init.sh                   # Chequeo de estructura y estado
-├── ios/                      # App nativa iOS (+ ios/AGENTS.md)
-└── android/                  # App nativa Android (+ android/AGENTS.md)
+│   └── verify-feature.sh     # Gate dual antes de done
+├── init.sh
+├── ios/
+└── android/
 ```
 
-### Flujo de una feature
+### Flujo de una feature (1.x a 2.x)
 
 1. Spec en `features/*.feature`
-2. Entrada en `feature_list.json` → `in_progress`
-3. Implementación **solo en una plataforma** (sesión iOS o Android)
-4. Sensores de esa plataforma (tests / build)
-5. La otra plataforma
+2. `in_progress` en `feature_list.json`
+3. Implementación en **una** plataforma
+4. **Sensor** de esa plataforma en verde (si falla, corregir; no listo en rojo)
+5. La otra plataforma + su sensor
 6. Checklist dual de comportamiento
 7. `./scripts/verify-feature.sh <feature-id>`
-8. Solo entonces → `done`
+8. Solo entonces `done`
+
+### Loop (2.x)
+
+Documentado en `AGENTS.md`: el agente no reporta plataforma terminada con tests/build en rojo; `done` exige gate dual.
 
 ---
 
@@ -88,11 +104,11 @@ leafly/
 
 ### Requisitos
 
-- **iOS:** Xcode reciente, simulador iPhone
-- **Android:** Android Studio, JDK 17+, emulador o dispositivo
-- **Harness:** `bash`, `python3` (para el gate)
+- **iOS:** Xcode, simulador iPhone
+- **Android:** Android Studio, **JDK 17+**, emulador o dispositivo
+- **Harness:** `bash`, `python3`
 
-### Comprobar el harness
+### Harness
 
 ```bash
 ./init.sh
@@ -100,9 +116,7 @@ leafly/
 
 ### iOS
 
-Abrir `ios/Leafly/Leafly.xcodeproj` en Xcode, scheme **Leafly**, Run.
-
-Tests:
+Abrir `ios/Leafly/Leafly.xcodeproj`, scheme **Leafly**, Run.
 
 ```bash
 xcodebuild test \
@@ -111,22 +125,20 @@ xcodebuild test \
   -destination 'platform=iOS Simulator,name=iPhone 16'
 ```
 
-(Ajusta el nombre del simulador al que tengas.)
+(Ajusta el nombre del simulador.)
 
 ### Android
 
 ```bash
+export JAVA_HOME=…   # JDK 17+, no Java 8
 cd android
-./gradlew :app:installDebug
-# o
 ./gradlew :app:testDebugUnitTest
 ```
 
-### Gate dual (antes de marcar una feature como done)
+### Gate dual
 
 ```bash
 ./scripts/verify-feature.sh
-# o
 ./scripts/verify-feature.sh <feature-id>
 ```
 
@@ -134,45 +146,31 @@ cd android
 
 ## CI
 
-GitHub Actions en cada push/PR a `main`:
+En cada push/PR a `main`:
 
-- Chequeo del harness (`./init.sh`)
+- `./init.sh`
 - Unit tests Android (JDK 17)
 - Build iOS (macOS runner)
 
 ---
 
-## Tags y ramas
+## Principios
 
-| Ref | Significado |
-|-----|------------|
-| `main` | Línea estable del MVP + harness |
-| `v1.0-harness-mvp` | Punto fijo recomendado para enlazar en el artículo |
-| `harness-hardening` | Histórico del trabajo de gates/sensores/flywheel (si se conserva) |
-
-```bash
-git tag -a v1.0-harness-mvp -m "Dual native MVP + harness engineering"
-git push origin v1.0-harness-mvp
-```
-
----
-
-## Principios que guiaron el trabajo
-
-- **Una feature en progreso** a la vez
-- **Una plataforma por sesión** del agente
-- **Done = dual** (iOS y Android), no «casi listo en una»
-- **Specs antes que código**; el design system no se improvisa
-- **Sensores y gate** como feedback, no como adorno
-- Textos de producto en **español**, tono calmado
+- Una feature en progreso a la vez
+- Una plataforma por sesión del agente
+- **Done = dual** (iOS + Android) + gate
+- Specs antes que código; design system obligatorio
+- Sensores y gate como feedback, no como adorno
+- Textos de producto en español, tono calmado
+- En 2.x: **loop** — no avanzar el estado del producto en rojo
 
 ---
 
 ## Qué no es este proyecto
 
-- No es una app multiplataforma (no Flutter / RN / KMP de UI)
-- No está orientado a publicación en App Store / Play (sin release signing ni store assets de producción)
-- No es un framework de agentes: es un **caso de estudio** de harness aplicado
+- No es multiplataforma de UI (no Flutter / RN / KMP de interfaz)
+- No está orientado a App Store / Play
+- No es un framework de agentes: es un **caso de estudio** de harness a loop
 
 ---
 
@@ -180,4 +178,4 @@ git push origin v1.0-harness-mvp
 
 Proyecto de aprendizaje y escritura sobre **harness engineering** y desarrollo dual nativo.
 
-Si el enfoque te resulta útil, el detalle narrativo está en los artículos del blog enlazados arriba.
+Detalle narrativo en los artículos del blog enlazados arriba.
