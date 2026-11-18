@@ -6,9 +6,11 @@ import com.raulferrergarcia.leafly.domain.model.NotificationPreferences
 import com.raulferrergarcia.leafly.domain.model.Plant
 import com.raulferrergarcia.leafly.domain.model.PlantPhoto
 import com.raulferrergarcia.leafly.domain.model.PlantType
+import com.raulferrergarcia.leafly.domain.model.WateringLogEntry
 import com.raulferrergarcia.leafly.domain.repository.PlantNotFoundException
 import com.raulferrergarcia.leafly.domain.repository.PlantRepository
 import com.raulferrergarcia.leafly.domain.scheduling.WateringReminderScheduling
+import com.raulferrergarcia.leafly.domain.usecase.AddWateringLogEntryUseCase
 import com.raulferrergarcia.leafly.domain.usecase.CancelWateringReminderUseCase
 import com.raulferrergarcia.leafly.domain.usecase.MarkPlantWateredUseCase
 import java.io.IOException
@@ -56,6 +58,7 @@ class PlantDetailViewModelTest {
         plant = plant,
         repository = repository,
         markPlantWatered = MarkPlantWateredUseCase(repository, clock),
+        addWateringLogEntry = AddWateringLogEntryUseCase(repository, clock),
         cancelWateringReminder = CancelWateringReminderUseCase(reminders),
     )
 
@@ -253,6 +256,110 @@ class PlantDetailViewModelTest {
         assertEquals(now, viewModel.uiState.value.plant.lastWateredAt)
     }
 
+    // ------------------------------------------------------------------
+    // Historial de riegos
+    // ------------------------------------------------------------------
+
+    @Test
+    fun `marking as watered adds an entry to the watering log`() = runTest(dispatcher) {
+        val plant = Plant(name = "Monstera")
+        val repository = FakeDetailPlantRepository(listOf(plant))
+        val viewModel = createViewModel(plant, repository = repository)
+
+        viewModel.markAsWatered()
+
+        val state = viewModel.uiState.value
+        assertEquals(1, state.wateringLog.size)
+        assertEquals(now, state.wateringLog[0].wateredAt)
+        assertEquals(plant.id, state.wateringLog[0].plantId)
+        assertEquals(1, repository.wateringLogByPlant[plant.id]?.size)
+        assertNull(state.wateringLogErrorMessage)
+        assertFalse(state.isSaving)
+    }
+
+    @Test
+    fun `marking as watered puts the newest entry first`() = runTest(dispatcher) {
+        val plant = Plant(name = "Monstera")
+        val previous = WateringLogEntry(
+            id = "entry-old",
+            plantId = plant.id,
+            wateredAt = now - 3L * DAY_MILLIS,
+        )
+        val repository = FakeDetailPlantRepository(listOf(plant)).apply {
+            wateringLogByPlant[plant.id] = mutableListOf(previous)
+        }
+        val viewModel = createViewModel(plant, repository = repository)
+        viewModel.loadWateringLog()
+
+        viewModel.markAsWatered()
+
+        val state = viewModel.uiState.value
+        assertEquals(2, state.wateringLog.size)
+        assertEquals(now, state.wateringLog[0].wateredAt) // más reciente primero
+        assertEquals("entry-old", state.wateringLog[1].id)
+    }
+
+    @Test
+    fun `loadWateringLog loads entries from repository newest first`() = runTest(dispatcher) {
+        val plant = Plant(name = "Monstera")
+        val repository = FakeDetailPlantRepository(listOf(plant))
+        val viewModel = createViewModel(plant, repository = repository)
+
+        val older = WateringLogEntry(
+            id = "older",
+            plantId = plant.id,
+            wateredAt = now - 10_000,
+        )
+        val newest = WateringLogEntry(
+            id = "newest",
+            plantId = plant.id,
+            wateredAt = now,
+        )
+        repository.addWateringLogEntry(older)
+        repository.addWateringLogEntry(newest)
+
+        viewModel.loadWateringLog()
+
+        val state = viewModel.uiState.value
+        assertEquals(2, state.wateringLog.size)
+        assertEquals("newest", state.wateringLog[0].id)
+        assertEquals("older", state.wateringLog[1].id)
+        assertFalse(state.isLoadingWateringLog)
+        assertNull(state.wateringLogErrorMessage)
+    }
+
+    @Test
+    fun `loadWateringLog without entries leaves it empty`() = runTest(dispatcher) {
+        val plant = Plant(name = "Nueva")
+        val viewModel = createViewModel(plant)
+
+        viewModel.loadWateringLog()
+
+        val state = viewModel.uiState.value
+        assertTrue(state.wateringLog.isEmpty())
+        assertFalse(state.isLoadingWateringLog)
+        assertNull(state.wateringLogErrorMessage)
+    }
+
+    @Test
+    fun `loadWateringLog failure shows calm error message`() = runTest(dispatcher) {
+        val plant = Plant(name = "Monstera")
+        val repository = FakeDetailPlantRepository(listOf(plant)).apply {
+            failOnObserveWateringLog = true
+        }
+        val viewModel = createViewModel(plant, repository = repository)
+
+        viewModel.loadWateringLog()
+
+        val state = viewModel.uiState.value
+        assertTrue(state.wateringLog.isEmpty())
+        assertEquals(
+            LeaflyCopy.Error.Watering.message,
+            state.wateringLogErrorMessage,
+        )
+        assertFalse(state.isLoadingWateringLog)
+    }
+
     @Test
     fun `deletePlant removes plant from repository`() = runTest(dispatcher) {
         val plant = Plant(name = "Monstera", id = "plant-1")
@@ -382,6 +489,7 @@ private class FakeDetailPlantRepository(
     var failOnUpdate: Boolean = false
     var failOnDelete: Boolean = false
     var failOnObservePhotos: Boolean = false
+    var failOnObserveWateringLog: Boolean = false
     var failOnAddPhoto: Boolean = false
     var gateUpdate: CompletableDeferred<Unit>? = null
     var updateCalls: Int = 0
@@ -389,6 +497,7 @@ private class FakeDetailPlantRepository(
     val deletedPlantIds = mutableListOf<String>()
 
     private val photosByPlant = mutableMapOf<String, MutableList<PlantPhoto>>()
+    val wateringLogByPlant = mutableMapOf<String, MutableList<WateringLogEntry>>()
 
     override fun observePlants(): Flow<List<Plant>> = plantsFlow
 
@@ -442,5 +551,17 @@ private class FakeDetailPlantRepository(
                 current + plantWithPhoto
             }
         }
+    }
+
+    override fun observeWateringLog(plantId: String): Flow<List<WateringLogEntry>> = flow {
+        if (failOnObserveWateringLog) {
+            throw IOException("No se pudieron cargar los riegos")
+        }
+        emit((wateringLogByPlant[plantId]?.toList() ?: emptyList<WateringLogEntry>())
+            .sortedByDescending { it.wateredAt })
+    }
+
+    override suspend fun addWateringLogEntry(entry: WateringLogEntry) {
+        wateringLogByPlant.getOrPut(entry.plantId) { mutableListOf() }.add(entry)
     }
 }

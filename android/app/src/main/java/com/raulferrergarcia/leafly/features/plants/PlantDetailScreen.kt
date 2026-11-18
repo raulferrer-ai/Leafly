@@ -54,6 +54,7 @@ import com.raulferrergarcia.leafly.designsystem.labelRes
 import com.raulferrergarcia.leafly.designsystem.statusIcon
 import com.raulferrergarcia.leafly.domain.model.Plant
 import com.raulferrergarcia.leafly.domain.model.PlantType
+import com.raulferrergarcia.leafly.domain.model.WateringLogEntry
 import com.raulferrergarcia.leafly.domain.model.WateringStatus
 import com.raulferrergarcia.leafly.domain.model.wateringStatus
 import com.raulferrergarcia.leafly.domain.usecase.AddPlantUseCase
@@ -89,14 +90,17 @@ fun PlantDetailScreen(
 
     LaunchedEffect(Unit) {
         viewModel.loadPhotoHistory()
+        viewModel.loadWateringLog()
     }
 
     PlantDetailContent(
         uiState = uiState,
         onBack = onBack,
         onWater = viewModel::markAsWatered,
+        onMarkAsWatered = viewModel::markAsWatered,
         onAddPhoto = onAddPhoto,
         onRetry = { viewModel.loadPhotoHistory() },
+        onWateringLogRetry = { viewModel.loadWateringLog() },
         onEditPlant = {
             isShowingEdit = true
         },
@@ -170,8 +174,10 @@ internal fun PlantDetailContent(
     uiState: PlantDetailUiState,
     onBack: () -> Unit,
     onWater: () -> Unit,
+    onMarkAsWatered: () -> Unit = {},
     onAddPhoto: (ByteArray) -> Unit = {},
     onRetry: () -> Unit = {},
+    onWateringLogRetry: () -> Unit = {},
     onEditPlant: () -> Unit = {},
     onDeletePlant: () -> Unit = {},
     modifier: Modifier = Modifier,
@@ -218,6 +224,14 @@ internal fun PlantDetailContent(
                 if (uiState.saveError != null) {
                     ErrorCard()
                 }
+
+                WateringLogSection(
+                    entries = uiState.wateringLog,
+                    isLoading = uiState.isLoadingWateringLog,
+                    errorMessage = uiState.wateringLogErrorMessage,
+                    onRetry = onWateringLogRetry,
+                    onMarkAsWatered = onMarkAsWatered,
+                )
 
                 PlantPhotoHistorySection(
                     photos = uiState.photos,

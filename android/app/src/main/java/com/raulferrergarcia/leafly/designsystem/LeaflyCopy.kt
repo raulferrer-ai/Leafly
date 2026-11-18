@@ -26,6 +26,13 @@ object LeaflyCopy {
             val button = "Añadir la primera foto"
         }
 
+        /** Historial de riegos de una planta sin registros aún. */
+        object WateringLog {
+            val title = "Aún no hay riegos registrados"
+            val subtitle = "Cuando la regues, aquí aparecerá cada riego, del más reciente al más antiguo."
+            val button = "Ya la regué"
+        }
+
         /** Búsqueda o filtro sin resultados. */
         object SearchResults {
             val title = "No se encontraron plantas"

@@ -233,6 +233,73 @@ final class SwiftDataPlantRepositoryTests: XCTestCase {
         XCTAssertEqual(plants.first?.photoData, photo.data)
     }
 
+    // MARK: - Historial de riegos
+
+    func testFetchWateringLogWithoutHistoryReturnsEmpty() async throws {
+        let repository = try makeRepository()
+        let plant = Plant(name: "Sin riegos")
+        try await repository.add(plant)
+
+        let log = try await repository.fetchWateringLog(for: plant.id)
+
+        XCTAssertTrue(log.isEmpty)
+    }
+
+    func testAddWateringLogEntryPersistsIt() async throws {
+        let repository = try makeRepository()
+        let plant = Plant(name: "Monstera")
+        try await repository.add(plant)
+
+        let wateredAt = Date(timeIntervalSince1970: 1_900_000_000)
+        let entry = WateringLogEntry(
+            plantID: plant.id,
+            wateredAt: wateredAt
+        )
+        try await repository.addWateringLogEntry(entry)
+
+        let log = try await repository.fetchWateringLog(for: plant.id)
+        XCTAssertEqual(log.count, 1)
+        XCTAssertEqual(log.first?.id, entry.id)
+        XCTAssertEqual(log.first?.wateredAt, wateredAt)
+        XCTAssertEqual(log.first?.plantID, plant.id)
+    }
+
+    func testWateringLogEntriesAreReturnedNewestFirst() async throws {
+        let repository = try makeRepository()
+        let plant = Plant(name: "Monstera")
+        try await repository.add(plant)
+
+        let older = WateringLogEntry(
+            plantID: plant.id,
+            wateredAt: Date(timeIntervalSince1970: 1_000)
+        )
+        let newest = WateringLogEntry(
+            plantID: plant.id,
+            wateredAt: Date(timeIntervalSince1970: 2_000)
+        )
+
+        try await repository.addWateringLogEntry(older)
+        try await repository.addWateringLogEntry(newest)
+
+        let log = try await repository.fetchWateringLog(for: plant.id)
+        XCTAssertEqual(log.map(\.id), [newest.id, older.id])
+    }
+
+    func testAddWateringLogEntryToUnknownPlantThrows() async throws {
+        let repository = try makeRepository()
+        let entry = WateringLogEntry(
+            plantID: UUID(),
+            wateredAt: .now
+        )
+
+        do {
+            try await repository.addWateringLogEntry(entry)
+            XCTFail("Se esperaba un error al añadir un riego a una planta inexistente")
+        } catch {
+            XCTAssertEqual(error as? PlantRepositoryError, .plantNotFound)
+        }
+    }
+
     // MARK: - Helpers
 
     private func makeRepository() throws -> SwiftDataPlantRepository {
@@ -243,6 +310,7 @@ final class SwiftDataPlantRepositoryTests: XCTestCase {
         let container = try ModelContainer(
             for: PlantEntity.self,
             PlantPhotoEntity.self,
+            WateringLogEntryEntity.self,
             configurations: configuration
         )
         return SwiftDataPlantRepository(container: container)

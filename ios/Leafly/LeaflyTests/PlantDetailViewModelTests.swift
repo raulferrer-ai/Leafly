@@ -361,6 +361,106 @@ final class PlantDetailViewModelTests: XCTestCase {
         XCTAssertEqual(viewModel.plant.photoData, photoData)
     }
 
+    // MARK: - Historial de riegos
+
+    func testLoadWateringLogShowsNewestFirst() async {
+        let plant = Plant(name: "Monstera")
+        let older = WateringLogEntry(
+            plantID: plant.id,
+            wateredAt: date(daysAgo: 5, from: now)
+        )
+        let newest = WateringLogEntry(plantID: plant.id, wateredAt: now)
+        let repository = MockPlantDetailRepository(
+            plants: [plant],
+            wateringLog: [older, newest]
+        )
+        let viewModel = makeViewModel(plant: plant, repository: repository)
+
+        await viewModel.loadWateringLog()
+
+        XCTAssertEqual(viewModel.wateringLog.map(\.id), [newest.id, older.id])
+        XCTAssertNil(viewModel.wateringLogErrorMessage)
+        XCTAssertFalse(viewModel.isLoadingWateringLog)
+    }
+
+    func testLoadWateringLogWithoutHistoryLeavesItEmpty() async {
+        let plant = Plant(name: "Nueva")
+        let viewModel = makeViewModel(plant: plant)
+
+        await viewModel.loadWateringLog()
+
+        XCTAssertTrue(viewModel.wateringLog.isEmpty)
+        XCTAssertNil(viewModel.wateringLogErrorMessage)
+        XCTAssertFalse(viewModel.isLoadingWateringLog)
+    }
+
+    func testLoadWateringLogFailureShowsCalmMessage() async {
+        let plant = Plant(name: "Monstera")
+        let repository = MockPlantDetailRepository(plants: [plant])
+        repository.fetchWateringLogError = MockError.fetchWateringLogFailed
+        let viewModel = makeViewModel(plant: plant, repository: repository)
+
+        await viewModel.loadWateringLog()
+
+        XCTAssertTrue(viewModel.wateringLog.isEmpty)
+        XCTAssertEqual(
+            viewModel.wateringLogErrorMessage,
+            "No hemos podido cargar el historial de riegos. Inténtalo de nuevo."
+        )
+        XCTAssertFalse(viewModel.isLoadingWateringLog)
+    }
+
+    func testMarkAsWateredAddsEntryToTheWateringLog() async {
+        let plant = Plant(name: "Monstera")
+        let repository = MockPlantDetailRepository(plants: [plant])
+        let viewModel = makeViewModel(plant: plant, repository: repository)
+
+        let didSave = await viewModel.markAsWatered()
+
+        XCTAssertTrue(didSave)
+        XCTAssertEqual(viewModel.wateringLog.count, 1)
+        XCTAssertEqual(viewModel.wateringLog.first?.wateredAt, now)
+        XCTAssertEqual(viewModel.wateringLog.first?.plantID, plant.id)
+        XCTAssertEqual(repository.wateringLogByPlant[plant.id]?.count, 1)
+        XCTAssertNil(viewModel.wateringLogErrorMessage)
+        XCTAssertFalse(viewModel.isSaving)
+    }
+
+    func testMarkAsWateredPutsNewestEntryFirst() async {
+        let plant = Plant(name: "Monstera")
+        let previous = WateringLogEntry(
+            plantID: plant.id,
+            wateredAt: date(daysAgo: 3, from: now)
+        )
+        let repository = MockPlantDetailRepository(
+            plants: [plant],
+            wateringLog: [previous]
+        )
+        let viewModel = makeViewModel(plant: plant, repository: repository)
+        await viewModel.loadWateringLog()
+
+        await viewModel.markAsWatered()
+
+        XCTAssertEqual(viewModel.wateringLog.count, 2)
+        XCTAssertEqual(viewModel.wateringLog.first?.wateredAt, now)
+        XCTAssertEqual(viewModel.wateringLog.last?.id, previous.id)
+    }
+
+    func testMarkAsWateredFailureKeepsWateringLogEmpty() async {
+        let plant = Plant(name: "Monstera")
+        let repository = MockPlantDetailRepository(plants: [plant])
+        repository.addWateringLogEntryError = MockError.addWateringLogEntryFailed
+        let viewModel = makeViewModel(plant: plant, repository: repository)
+
+        let didSave = await viewModel.markAsWatered()
+
+        // El riego en la planta sí se guardó (update no falló), solo falló el historial.
+        XCTAssertTrue(didSave)
+        XCTAssertTrue(viewModel.wateringLog.isEmpty)
+        XCTAssertNotNil(viewModel.wateringLogErrorMessage)
+        XCTAssertFalse(viewModel.isSaving)
+    }
+
     // MARK: - Helpers
 
     private func makeViewModel(
@@ -390,11 +490,24 @@ private final class MockPlantDetailRepository: PlantRepository {
     var fetchPhotosError: Error?
     var addPhotoError: Error?
 
-    init(plants: [Plant], photos: [PlantPhoto] = []) {
+    /// Historial de riegos por planta (doble de prueba).
+    private(set) var wateringLogByPlant: [UUID: [WateringLogEntry]] = [:]
+    var fetchWateringLogError: Error?
+    var addWateringLogEntryError: Error?
+
+    init(
+        plants: [Plant],
+        photos: [PlantPhoto] = [],
+        wateringLog: [WateringLogEntry] = []
+    ) {
         self.plants = plants
 
         for photo in photos {
             photosByPlant[photo.plantID, default: []].append(photo)
+        }
+
+        for entry in wateringLog {
+            wateringLogByPlant[entry.plantID, default: []].append(entry)
         }
     }
 
@@ -443,6 +556,22 @@ private final class MockPlantDetailRepository: PlantRepository {
 
         photosByPlant[photo.plantID, default: []].append(photo)
     }
+
+    func fetchWateringLog(for plantID: UUID) async throws -> [WateringLogEntry] {
+        if let fetchWateringLogError {
+            throw fetchWateringLogError
+        }
+
+        return (wateringLogByPlant[plantID] ?? []).sorted { $0.wateredAt > $1.wateredAt }
+    }
+
+    func addWateringLogEntry(_ entry: WateringLogEntry) async throws {
+        if let addWateringLogEntryError {
+            throw addWateringLogEntryError
+        }
+
+        wateringLogByPlant[entry.plantID, default: []].append(entry)
+    }
 }
 
 @MainActor
@@ -467,4 +596,6 @@ private enum MockError: Error {
     case updateFailed
     case fetchPhotosFailed
     case addPhotoFailed
+    case fetchWateringLogFailed
+    case addWateringLogEntryFailed
 }

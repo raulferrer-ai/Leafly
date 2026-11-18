@@ -10,6 +10,7 @@ import com.raulferrergarcia.leafly.data.repository.RoomPlantRepository
 import com.raulferrergarcia.leafly.domain.repository.PlantRepository
 import com.raulferrergarcia.leafly.domain.scheduling.WateringReminderScheduling
 import com.raulferrergarcia.leafly.domain.usecase.AddPlantUseCase
+import com.raulferrergarcia.leafly.domain.usecase.AddWateringLogEntryUseCase
 import com.raulferrergarcia.leafly.domain.usecase.CancelWateringReminderUseCase
 import com.raulferrergarcia.leafly.domain.usecase.EditPlantUseCase
 import com.raulferrergarcia.leafly.domain.usecase.MarkPlantWateredUseCase
@@ -28,7 +29,7 @@ class AppContainer(context: Context) {
         LeaflyDatabase::class.java,
         DATABASE_NAME,
     )
-        .addMigrations(LeaflyDatabase.MIGRATION_1_2, LeaflyDatabase.MIGRATION_2_3, LeaflyDatabase.MIGRATION_3_4)
+        .addMigrations(LeaflyDatabase.MIGRATION_1_2, LeaflyDatabase.MIGRATION_2_3, LeaflyDatabase.MIGRATION_3_4, LeaflyDatabase.MIGRATION_4_5)
         .build()
 
     private val plantRepository: PlantRepository = RoomPlantRepository(database.plantDao())
@@ -44,6 +45,7 @@ class AppContainer(context: Context) {
     val addPlant: AddPlantUseCase = AddPlantUseCase(plantRepository)
     val editPlant: EditPlantUseCase = EditPlantUseCase(plantRepository)
     val markPlantWatered: MarkPlantWateredUseCase = MarkPlantWateredUseCase(plantRepository)
+    val addWateringLogEntry: AddWateringLogEntryUseCase = AddWateringLogEntryUseCase(plantRepository)
     val syncWateringReminders: SyncWateringRemindersUseCase =
         SyncWateringRemindersUseCase(wateringReminders)
     val cancelWateringReminder: CancelWateringReminderUseCase =

@@ -36,6 +36,13 @@ enum LeaflyCopy {
             static let subtitle = "Cuando quieras, guarda una foto y podrás ver cómo crece con el tiempo."
             static let button = "Añadir la primera foto"
         }
+
+        /// Historial de riegos de una planta sin registros aún.
+        enum WateringLog {
+            static let title = "Aún no hay riegos registrados"
+            static let subtitle = "Cuando la regues, aquí aparecerá cada riego, del más reciente al más antiguo."
+            static let button = "Ya la regué"
+        }
     }
 
     // MARK: - Errores

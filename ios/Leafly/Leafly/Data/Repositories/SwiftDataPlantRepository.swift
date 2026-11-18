@@ -89,6 +89,40 @@ final class SwiftDataPlantRepository: PlantRepository {
         try context.save()
     }
 
+    func fetchWateringLog(for plantID: UUID) async throws -> [WateringLogEntry] {
+        let descriptor = FetchDescriptor<PlantEntity>(
+            predicate: #Predicate { $0.id == plantID }
+        )
+
+        guard let plant = try context.fetch(descriptor).first else {
+            return []
+        }
+
+        return plant.wateringLog
+            .compactMap(\.domainModel)
+            .sorted { $0.wateredAt > $1.wateredAt }
+    }
+
+    func addWateringLogEntry(_ entry: WateringLogEntry) async throws {
+        let plantID = entry.plantID
+        let descriptor = FetchDescriptor<PlantEntity>(
+            predicate: #Predicate { $0.id == plantID }
+        )
+
+        guard let plant = try context.fetch(descriptor).first else {
+            throw PlantRepositoryError.plantNotFound
+        }
+
+        let entity = WateringLogEntryEntity(
+            id: entry.id,
+            wateredAt: entry.wateredAt,
+            plant: plant
+        )
+        context.insert(entity)
+
+        try context.save()
+    }
+
     func delete(_ plantID: UUID) async throws {
         let descriptor = FetchDescriptor<PlantEntity>(
             predicate: #Predicate { $0.id == plantID }

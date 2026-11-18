@@ -4,6 +4,7 @@ import app.cash.turbine.test
 import com.raulferrergarcia.leafly.domain.model.Plant
 import com.raulferrergarcia.leafly.domain.model.PlantPhoto
 import com.raulferrergarcia.leafly.domain.model.PlantType
+import com.raulferrergarcia.leafly.domain.model.WateringLogEntry
 import com.raulferrergarcia.leafly.domain.repository.PlantNotFoundException
 import com.raulferrergarcia.leafly.domain.repository.PlantRepository
 import com.raulferrergarcia.leafly.domain.usecase.AddPlantUseCase
@@ -457,6 +458,11 @@ private class FakePlantRepository : PlantRepository {
             current.filter { it.id != plantId }
         }
     }
+
+    override fun observeWateringLog(plantId: String): Flow<List<WateringLogEntry>> =
+        flow<List<WateringLogEntry>> { emptyList<WateringLogEntry>() }
+
+    override suspend fun addWateringLogEntry(entry: WateringLogEntry) {}
 }
 
 /**

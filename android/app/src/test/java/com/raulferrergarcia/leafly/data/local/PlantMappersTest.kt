@@ -2,6 +2,7 @@ package com.raulferrergarcia.leafly.data.local
 
 import com.raulferrergarcia.leafly.domain.model.Plant
 import com.raulferrergarcia.leafly.domain.model.PlantType
+import com.raulferrergarcia.leafly.domain.model.WateringLogEntry
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -159,5 +160,50 @@ class PlantMappersTest {
         )
 
         assertNull(entity.toDomain().photoData)
+    }
+
+    // ------------------------------------------------------------------
+    // Historial de riegos
+    // ------------------------------------------------------------------
+
+    @Test
+    fun `watering log entry entity maps to domain`() {
+        val entity = WateringLogEntryEntity(
+            id = "entry-1",
+            plantId = "planta-1",
+            wateredAt = 1_800_000_000_000,
+        )
+
+        val entry = entity.toDomain()
+
+        assertEquals("entry-1", entry.id)
+        assertEquals("planta-1", entry.plantId)
+        assertEquals(1_800_000_000_000, entry.wateredAt)
+    }
+
+    @Test
+    fun `watering log domain maps to entity`() {
+        val entry = WateringLogEntry(
+            id = "entry-2",
+            plantId = "planta-2",
+            wateredAt = 1_900_000_000_000,
+        )
+
+        val entity = entry.toEntity(plantId = "planta-2")
+
+        assertEquals("entry-2", entity.id)
+        assertEquals("planta-2", entity.plantId)
+        assertEquals(1_900_000_000_000, entity.wateredAt)
+    }
+
+    @Test
+    fun `watering log round trip keeps every field`() {
+        val entry = WateringLogEntry(
+            id = "entry-3",
+            plantId = "planta-3",
+            wateredAt = 2_000_000_000_000,
+        )
+
+        assertEquals(entry, entry.toEntity(plantId = entry.plantId).toDomain())
     }
 }

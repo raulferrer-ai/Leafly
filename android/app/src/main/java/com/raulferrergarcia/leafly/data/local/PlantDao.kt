@@ -43,4 +43,19 @@ interface PlantDao {
     /** Borra una planta y sus fotos asociadas (CASCADE por foreign key). */
     @Query("DELETE FROM plants WHERE id = :id")
     suspend fun deletePlant(id: String)
+
+    // ------------------------------------------------------------------
+    // Historial de riegos
+    // ------------------------------------------------------------------
+
+    /** Entradas de riego de una planta, de más reciente a más antigua. */
+    @Query("SELECT * FROM watering_log_entries WHERE plantId = :plantId ORDER BY wateredAt DESC")
+    fun observeWateringLog(plantId: String): Flow<List<WateringLogEntryEntity>>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertWateringLogEntry(entry: WateringLogEntryEntity)
+
+    /** Borra todas las entradas de riego de una planta (útil si se borra la planta manualmente). */
+    @Query("DELETE FROM watering_log_entries WHERE plantId = :plantId")
+    suspend fun deleteWateringLogOfPlant(plantId: String)
 }

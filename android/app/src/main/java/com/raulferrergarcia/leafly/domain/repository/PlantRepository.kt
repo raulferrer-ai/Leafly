@@ -2,6 +2,7 @@ package com.raulferrergarcia.leafly.domain.repository
 
 import com.raulferrergarcia.leafly.domain.model.Plant
 import com.raulferrergarcia.leafly.domain.model.PlantPhoto
+import com.raulferrergarcia.leafly.domain.model.WateringLogEntry
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -34,6 +35,19 @@ interface PlantRepository {
      * Lanza [PlantNotFoundException] si la planta no existe.
      */
     suspend fun delete(plantId: String)
+
+    // ------------------------------------------------------------------
+    // Historial de riegos
+    // ------------------------------------------------------------------
+
+    /** Entradas de riego de una planta, de más reciente a más antigua. */
+    fun observeWateringLog(plantId: String): Flow<List<WateringLogEntry>>
+
+    /**
+     * Añade una entrada al historial de riegos de una planta.
+     * Lanza [PlantNotFoundException] si la planta no existe.
+     */
+    suspend fun addWateringLogEntry(entry: WateringLogEntry)
 }
 
 /** La planta que se quería actualizar ya no existe. */

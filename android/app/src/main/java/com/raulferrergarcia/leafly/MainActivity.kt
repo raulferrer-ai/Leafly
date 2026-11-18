@@ -28,6 +28,7 @@ class MainActivity : ComponentActivity() {
                     addPlant = container.addPlant,
                     editPlant = container.editPlant,
                     markPlantWatered = container.markPlantWatered,
+                    addWateringLogEntry = container.addWateringLogEntry,
                     syncWateringReminders = container.syncWateringReminders,
                     cancelWateringReminder = container.cancelWateringReminder,
                     plantRepository = container.repository,

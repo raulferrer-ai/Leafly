@@ -36,6 +36,15 @@ final class PlantDetailViewModel {
     /// Mensaje calmado cuando el historial no se pudo cargar o guardar.
     private(set) var photoErrorMessage: String?
 
+    /// Historial de riegos de la planta, de más reciente a más antigua.
+    private(set) var wateringLog: [WateringLogEntry] = []
+
+    /// `true` mientras se carga el historial de riegos por primera vez.
+    private(set) var isLoadingWateringLog = false
+
+    /// Mensaje calmado cuando el historial de riegos no se pudo cargar o guardar.
+    private(set) var wateringLogErrorMessage: String?
+
     private let repository: any PlantRepository
     private let reminders: any WateringReminderScheduling
     private let now: () -> Date
@@ -80,6 +89,15 @@ final class PlantDetailViewModel {
             try await repository.update(wateredPlant)
             plant = wateredPlant
 
+            // Registra el riego en el historial, más reciente primero.
+            let entry = WateringLogEntry(plantID: wateredPlant.id, wateredAt: now())
+            do {
+                try await repository.addWateringLogEntry(entry)
+                wateringLog.insert(entry, at: 0)
+            } catch {
+                wateringLogErrorMessage = "No hemos podido registrar el riego en el historial. Inténtalo de nuevo."
+            }
+
             // Ya está al día: su recordatorio pendiente deja de tener sentido.
             await reminders.cancelReminder(for: wateredPlant.id)
             return true
@@ -107,6 +125,27 @@ final class PlantDetailViewModel {
             photos = fetched.sorted { $0.addedAt > $1.addedAt }
         } catch {
             photoErrorMessage = "No hemos podido cargar las fotos. Inténtalo de nuevo."
+        }
+    }
+
+    // MARK: - Historial de riegos
+
+    /// Carga el historial de riegos de la planta.
+    ///
+    /// Si algo falla, se muestra un mensaje calmado y la planta sigue siendo
+    /// utilizable; el historial simplemente se queda como estaba.
+    func loadWateringLog() async {
+        guard !isLoadingWateringLog else { return }
+
+        isLoadingWateringLog = true
+        wateringLogErrorMessage = nil
+        defer { isLoadingWateringLog = false }
+
+        do {
+            let fetched = try await repository.fetchWateringLog(for: plant.id)
+            wateringLog = fetched.sorted { $0.wateredAt > $1.wateredAt }
+        } catch {
+            wateringLogErrorMessage = "No hemos podido cargar el historial de riegos. Inténtalo de nuevo."
         }
     }
 

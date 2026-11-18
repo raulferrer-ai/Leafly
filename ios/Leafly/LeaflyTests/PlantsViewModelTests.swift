@@ -289,6 +289,8 @@ private final class MockPlantRepository: PlantRepository {
 
     func fetchPhotos(for plantID: UUID) async throws -> [PlantPhoto] { [] }
     func addPhoto(_ photo: PlantPhoto) async throws {}
+    func fetchWateringLog(for plantID: UUID) async throws -> [WateringLogEntry] { [] }
+    func addWateringLogEntry(_ entry: WateringLogEntry) async throws {}
     func delete(_ plantID: UUID) async throws {}
 }
 

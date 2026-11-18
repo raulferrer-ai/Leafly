@@ -11,6 +11,7 @@ import com.raulferrergarcia.leafly.designsystem.LeaflyScreen
 import com.raulferrergarcia.leafly.data.repository.NotificationPreferencesRepository
 import com.raulferrergarcia.leafly.domain.repository.PlantRepository
 import com.raulferrergarcia.leafly.domain.usecase.AddPlantUseCase
+import com.raulferrergarcia.leafly.domain.usecase.AddWateringLogEntryUseCase
 import com.raulferrergarcia.leafly.domain.usecase.CancelWateringReminderUseCase
 import com.raulferrergarcia.leafly.domain.usecase.EditPlantUseCase
 import com.raulferrergarcia.leafly.domain.usecase.MarkPlantWateredUseCase
@@ -29,6 +30,7 @@ fun LeaflyRoot(
     addPlant: AddPlantUseCase,
     editPlant: EditPlantUseCase,
     markPlantWatered: MarkPlantWateredUseCase,
+    addWateringLogEntry: AddWateringLogEntryUseCase,
     syncWateringReminders: SyncWateringRemindersUseCase,
     cancelWateringReminder: CancelWateringReminderUseCase,
     plantRepository: PlantRepository,
@@ -54,6 +56,7 @@ fun LeaflyRoot(
                 addPlant = addPlant,
                 editPlant = editPlant,
                 markPlantWatered = markPlantWatered,
+                addWateringLogEntry = addWateringLogEntry,
                 syncWateringReminders = syncWateringReminders,
                 cancelWateringReminder = cancelWateringReminder,
                 plantRepository = plantRepository,

@@ -46,6 +46,7 @@ struct PlantDetailView: View {
                     header
                     statusCard
                     waterButton
+                    wateringLogSection
                     photoHistorySection
 
                     if let errorMessage = viewModel.errorMessage {
@@ -54,6 +55,10 @@ struct PlantDetailView: View {
 
                     if let photoErrorMessage = viewModel.photoErrorMessage {
                         photoErrorCard(message: photoErrorMessage)
+                    }
+
+                    if let wateringLogErrorMessage = viewModel.wateringLogErrorMessage {
+                        wateringLogErrorCard(message: wateringLogErrorMessage)
                     }
                 }
                 .frame(maxWidth: LeaflySpacing.contentMaxWidth)
@@ -67,6 +72,7 @@ struct PlantDetailView: View {
         .navigationBarBackButtonHidden(true)
         .task {
             await viewModel.loadPhotoHistory()
+            await viewModel.loadWateringLog()
         }
         .sheet(isPresented: $isShowingEdit) {
             AddPlantView(
@@ -227,6 +233,22 @@ struct PlantDetailView: View {
         )
     }
 
+    private var wateringLogSection: some View {
+        WateringLogSection(
+            entries: viewModel.wateringLog,
+            isLoading: viewModel.isLoadingWateringLog,
+            errorMessage: viewModel.wateringLogErrorMessage,
+            onRetry: {
+                await viewModel.loadWateringLog()
+            },
+            onMarkAsWatered: {
+                if await viewModel.markAsWatered() {
+                    await onPlantUpdated(viewModel.plant)
+                }
+            }
+        )
+    }
+
     private func errorCard(message: String) -> some View {
         LeaflyCard {
             VStack(alignment: .leading, spacing: LeaflySpacing.sm) {
@@ -270,6 +292,28 @@ struct PlantDetailView: View {
             }
         }
     }
+
+    private func wateringLogErrorCard(message: String) -> some View {
+        LeaflyCard {
+            VStack(alignment: .leading, spacing: LeaflySpacing.sm) {
+                Label("Historial de riegos", systemImage: "exclamationmark.circle.fill")
+                    .font(LeaflyFont.headline)
+                    .foregroundStyle(LeaflyColor.textPrimary)
+
+                Text(message)
+                    .font(LeaflyFont.footnote)
+                    .foregroundStyle(LeaflyColor.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Button(LeaflyCopy.Error.PhotoHistory.retry) {
+                    Task {
+                        await viewModel.loadWateringLog()
+                    }
+                }
+                .buttonStyle(LeaflyQuietButtonStyle())
+            }
+        }
+    }
 }
 
 #Preview("Detalle de planta") {
@@ -291,5 +335,7 @@ private final class PreviewPlantDetailRepository: PlantRepository {
     func update(_ plant: Plant) async throws {}
     func fetchPhotos(for plantID: UUID) async throws -> [PlantPhoto] { [] }
     func addPhoto(_ photo: PlantPhoto) async throws {}
+    func fetchWateringLog(for plantID: UUID) async throws -> [WateringLogEntry] { [] }
+    func addWateringLogEntry(_ entry: WateringLogEntry) async throws {}
     func delete(_ plantID: UUID) async throws {}
 }

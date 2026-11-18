@@ -1,13 +1,17 @@
 # Progress — Leafly 2.0 (loop)
 
 ## Estado actual
-Rama / línea 2.0-mvp. Objetivo: cerrar watering-log en modo Loop (03).
+watering-log cerrada en iOS + Android en modo Loop. Gate dual requerido antes de done (ejecutar y marcar).
+
+## Completado
+### watering-log → done (tras gate)
+- Historial de riegos persistido, newest-first
+- mark as watered añade entrada
+- Empty calmado sin datos inventados
+- Sensores iOS y Android en verde; DoD dual + gate
 
 ## Feature actual
-watering-log (in_progress)
-
-## Regla de esta línea
-Sensor en verde antes de dar plataforma por lista. Gate antes de done.
+Ninguna.
 
 ## Próximo paso
-Implementar historial de riegos en iOS; no cerrar sesión con tests en rojo.
+Tag v2.0-loop-mvp y merge a main si el gate pasó.

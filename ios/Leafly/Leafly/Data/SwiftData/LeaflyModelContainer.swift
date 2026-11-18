@@ -30,6 +30,7 @@ enum LeaflyModelContainer {
             return try ModelContainer(
                 for: PlantEntity.self,
                 PlantPhotoEntity.self,
+                WateringLogEntryEntity.self,
                 configurations: configuration
             )
         } catch {
@@ -40,6 +41,7 @@ enum LeaflyModelContainer {
                 return try ModelContainer(
                     for: PlantEntity.self,
                     PlantPhotoEntity.self,
+                    WateringLogEntryEntity.self,
                     configurations: fallback
                 )
             } catch {

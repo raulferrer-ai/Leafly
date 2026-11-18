@@ -22,6 +22,10 @@ final class PlantEntity {
     @Relationship(deleteRule: .cascade, inverse: \PlantPhotoEntity.plant)
     var photos: [PlantPhotoEntity] = []
 
+    /// Historial de riegos. Al borrar la planta, sus entradas se borran con ella.
+    @Relationship(deleteRule: .cascade, inverse: \WateringLogEntryEntity.plant)
+    var wateringLog: [WateringLogEntryEntity] = []
+
     init(
         id: UUID,
         name: String,

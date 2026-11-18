@@ -5,6 +5,7 @@ import com.raulferrergarcia.leafly.data.local.toDomain
 import com.raulferrergarcia.leafly.data.local.toEntity
 import com.raulferrergarcia.leafly.domain.model.Plant
 import com.raulferrergarcia.leafly.domain.model.PlantPhoto
+import com.raulferrergarcia.leafly.domain.model.WateringLogEntry
 import com.raulferrergarcia.leafly.domain.repository.PlantNotFoundException
 import com.raulferrergarcia.leafly.domain.repository.PlantRepository
 import kotlinx.coroutines.flow.Flow
@@ -56,5 +57,20 @@ class RoomPlantRepository(
             ?: throw PlantNotFoundException(plantId)
 
         plantDao.deletePlant(plantId)
+    }
+
+    // ------------------------------------------------------------------
+    // Historial de riegos
+    // ------------------------------------------------------------------
+
+    override fun observeWateringLog(plantId: String): Flow<List<WateringLogEntry>> =
+        plantDao.observeWateringLog(plantId).map { entities -> entities.map { it.toDomain() } }
+
+    override suspend fun addWateringLogEntry(entry: WateringLogEntry) {
+        // Verificamos que la planta existe antes de insertar la entrada.
+        val plantEntity = plantDao.findPlantById(entry.plantId)
+            ?: throw PlantNotFoundException(entry.plantId)
+
+        plantDao.insertWateringLogEntry(entry.toEntity(plantId = entry.plantId))
     }
 }

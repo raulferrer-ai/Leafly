@@ -7,8 +7,10 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.raulferrergarcia.leafly.designsystem.LeaflyCopy
 import com.raulferrergarcia.leafly.domain.model.Plant
 import com.raulferrergarcia.leafly.domain.model.PlantPhoto
+import com.raulferrergarcia.leafly.domain.model.WateringLogEntry
 import com.raulferrergarcia.leafly.domain.repository.PlantRepository
 import com.raulferrergarcia.leafly.domain.repository.PlantNotFoundException
+import com.raulferrergarcia.leafly.domain.usecase.AddWateringLogEntryUseCase
 import com.raulferrergarcia.leafly.domain.usecase.CancelWateringReminderUseCase
 import com.raulferrergarcia.leafly.domain.usecase.MarkPlantWateredUseCase
 import kotlinx.coroutines.CancellationException
@@ -30,6 +32,7 @@ class PlantDetailViewModel(
     private val plant: Plant,
     private val repository: PlantRepository,
     private val markPlantWatered: MarkPlantWateredUseCase,
+    private val addWateringLogEntry: AddWateringLogEntryUseCase,
     private val cancelWateringReminder: CancelWateringReminderUseCase,
 ) : ViewModel() {
 
@@ -48,11 +51,18 @@ class PlantDetailViewModel(
             try {
                 val wateredPlant = markPlantWatered(current.plant)
 
+                // Añade la entrada al historial de riegos (más reciente primero).
+                val entry = addWateringLogEntry(wateredPlant.id)
+
                 // Ya está al día: su recordatorio pendiente deja de tener sentido.
                 cancelWateringReminder(wateredPlant.id)
 
                 _uiState.update { state ->
-                    state.copy(plant = wateredPlant, isSaving = false)
+                    state.copy(
+                        plant = wateredPlant,
+                        wateringLog = listOf(entry) + state.wateringLog,
+                        isSaving = false,
+                    )
                 }
             } catch (cancellation: CancellationException) {
                 throw cancellation
@@ -87,6 +97,35 @@ class PlantDetailViewModel(
                     state.copy(
                         isLoadingPhotos = false,
                         photoErrorMessage = LeaflyCopy.Error.PhotoHistory.message,
+                    )
+                }
+            }
+        }
+    }
+
+    // ------------------------------------------------------------------
+    // Historial de riegos
+    // ------------------------------------------------------------------
+
+    /** Carga el historial de riegos de la planta (más reciente primero). */
+    fun loadWateringLog() {
+        _uiState.update { state ->
+            state.copy(isLoadingWateringLog = true, wateringLogErrorMessage = null)
+        }
+
+        viewModelScope.launch {
+            try {
+                val log = repository.observeWateringLog(plant.id).first()
+                _uiState.update { state ->
+                    state.copy(wateringLog = log, isLoadingWateringLog = false)
+                }
+            } catch (cancellation: CancellationException) {
+                throw cancellation
+            } catch (error: Exception) {
+                _uiState.update { state ->
+                    state.copy(
+                        isLoadingWateringLog = false,
+                        wateringLogErrorMessage = LeaflyCopy.Error.Watering.message,
                     )
                 }
             }
@@ -137,6 +176,7 @@ class PlantDetailViewModel(
             plant: Plant,
             repository: PlantRepository,
             markPlantWatered: MarkPlantWateredUseCase,
+            addWateringLogEntry: AddWateringLogEntryUseCase,
             cancelWateringReminder: CancelWateringReminderUseCase,
         ) = viewModelFactory {
             initializer {
@@ -144,6 +184,7 @@ class PlantDetailViewModel(
                     plant = plant,
                     repository = repository,
                     markPlantWatered = markPlantWatered,
+                    addWateringLogEntry = addWateringLogEntry,
                     cancelWateringReminder = cancelWateringReminder,
                 )
             }

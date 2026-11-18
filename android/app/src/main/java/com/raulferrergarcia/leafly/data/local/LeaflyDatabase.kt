@@ -6,8 +6,8 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
-    entities = [PlantEntity::class, PlantPhotoEntity::class],
-    version = 4,
+    entities = [PlantEntity::class, PlantPhotoEntity::class, WateringLogEntryEntity::class],
+    version = 5,
     exportSchema = false,
 )
 abstract class LeaflyDatabase : RoomDatabase() {
@@ -51,6 +51,27 @@ abstract class LeaflyDatabase : RoomDatabase() {
                 )
                 db.execSQL("CREATE INDEX IF NOT EXISTS idx_plant_photos_plantId ON plant_photos (plantId)")
                 db.execSQL("CREATE INDEX IF NOT EXISTS idx_plant_photos_addedAt ON plant_photos (addedAt)")
+            }
+        }
+
+        /**
+         * Crea la tabla de historial de riegos de las plantas.
+         */
+        val MIGRATION_4_5 = object : Migration(4, 5) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS watering_log_entries (
+                        id TEXT NOT NULL,
+                        plantId TEXT NOT NULL,
+                        wateredAt INTEGER NOT NULL,
+                        PRIMARY KEY (id),
+                        FOREIGN KEY (plantId) REFERENCES plants (id) ON DELETE CASCADE
+                    )
+                    """.trimIndent(),
+                )
+                db.execSQL("CREATE INDEX IF NOT EXISTS idx_watering_log_entries_plantId ON watering_log_entries (plantId)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS idx_watering_log_entries_wateredAt ON watering_log_entries (wateredAt)")
             }
         }
     }
