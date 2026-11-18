@@ -132,3 +132,12 @@ Si en esta sesión el agente se desvía de la spec, del design system o del DoD:
 3. Añadir regla y/o test cuando el fallo sea claro y repetible.
 
 No cerrar la sesión solo con el fix de código si el fallo revela un agujero del harness.
+
+## Loop (obligatorio en features 2.x)
+
+1. Implementar el cambio mínimo que exige la spec.
+2. Ejecutar el sensor de la plataforma actual.
+3. Si falla: corregir y volver al paso 2. No reportar "listo en esta plataforma" con el sensor en rojo.
+4. Tras ambas plataformas en verde: checklist dual breve de comportamiento.
+5. `./scripts/verify-feature.sh <feature-id>` → solo entonces `status: done`.
+6. Si hay desvío claro de la spec o del design system: corregir y registrar en `progress/flywheel-log.md`.

@@ -113,8 +113,22 @@
         "id": "delete-plant",
         "title": "Eliminar planta con confirmación calmada",
         "status": "done",
-        "platforms": ["ios", "android"],
+        "platforms": [
+            "ios",
+            "android"
+        ],
         "priority": 11,
         "spec": "features/11-delete-plant.feature"
+    },
+    {
+        "id": "watering-log",
+        "title": "Historial de riegos por planta",
+        "status": "in_progress",
+        "platforms": [
+            "ios",
+            "android"
+        ],
+        "priority": 12,
+        "spec": "features/12-watering-log.feature"
     }
 ]

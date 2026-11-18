@@ -23,7 +23,7 @@ El objetivo del proyecto es **aprender y documentar harness engineering** aplica
 Artículos relacionados:
 
 - [Artículo 1 — Harness Engineering for Dual-Native Mobile Development: Beyond AI Coding Assistants](https://raulferrergarcia.com/posts/harness-engineering-for-dual-native-development/harness-engineering-dual-native-mobile/)
-- [Artículo 2 — Endurecer el harness (gates, sensores, flywheel)](URL_ARTICULO_2) *(opcional)*
+- [Artículo 2 — Endurecer el harness (gates, sensores, flywheel)](https://raulferrergarcia.com/posts/from-declared-done-to-demonstrated-done/from-declared-done-to-demonstrated-done/)
 
 ---
 

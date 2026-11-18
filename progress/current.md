@@ -1,18 +1,13 @@
-# Progress — Leafly
+# Progress — Leafly 2.0 (loop)
 
 ## Estado actual
-delete-plant cerrada en iOS + Android.
-
-## Completado recientemente
-### delete-plant → done
-- Confirmación calmada desde el detalle
-- Borrado en persistencia (cascade de fotos)
-- Cancelación de recordatorio de esa planta
-- Lista / onboarding coherentes tras borrar
-- Tests y sensores en verde en ambas plataformas
+Rama / línea 2.0-mvp. Objetivo: cerrar watering-log en modo Loop (03).
 
 ## Feature actual
-Ninguna.
+watering-log (in_progress)
+
+## Regla de esta línea
+Sensor en verde antes de dar plataforma por lista. Gate antes de done.
 
 ## Próximo paso
-watering-log, accessibility-pass o widget-next-water.
+Implementar historial de riegos en iOS; no cerrar sesión con tests en rojo.
