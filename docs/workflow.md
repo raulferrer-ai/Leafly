@@ -150,6 +150,19 @@ xcodebuild test \
   -destination 'platform=iOS Simulator,name=iPhone 16'
 ```
 
+### Make targets (executable graph)
+
+```bash
+make init
+make sensor-ios
+make sensor-android
+make gate
+make gate FEATURE=<id>
+make verify FEATURE=<id>
+
+Human suspend points (dual checklist, merge, tag) are not Make targets on purpose.
+```
+
 ---
 
 ## Change policy
