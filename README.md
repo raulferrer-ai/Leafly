@@ -119,13 +119,11 @@ Documentado en `AGENTS.md`: el agente no reporta plataforma terminada con tests/
 Abrir `ios/Leafly/Leafly.xcodeproj`, scheme **Leafly**, Run.
 
 ```bash
-xcodebuild test \
-  -project ios/Leafly/Leafly.xcodeproj \
-  -scheme Leafly \
-  -destination 'platform=iOS Simulator,name=iPhone 16'
+make check-sim    # el simulador configurado existe en este Mac
+make sensor-ios   # tests iOS
 ```
 
-(Ajusta el nombre del simulador.)
+El simulador se define **solo** en el `Makefile` (variable `DEST`): cámbialo allí, o puntualmente con `make sensor-ios DEST='platform=iOS Simulator,name=<dispositivo>'`.
 
 ### Android
 

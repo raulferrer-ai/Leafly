@@ -1,0 +1,28 @@
+docs/prompts.md
+
+# macOS & IDE / local environment files
+.DS_Store
+**/.DS_Store
+**/xcuserdata/
+**/*.xcuserstate
+**/local.properties
+
+# Android & Gradle
+android/.gradle/
+android/.kotlin/
+android/build/
+android/**/build/
+android/.idea/
+android/*.iml
+android/**/*.iml
+android/.cxx/
+android/.externalNativeBuild/
+
+# iOS & Xcode build / derived artifacts
+ios/**/build/
+ios/**/DerivedData/
+ios/**/*.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved
+
+# Temporary harness & test logs
+.leafly-logs/
+*.xcresult/

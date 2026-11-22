@@ -68,16 +68,15 @@ Antes de dar una implementación por lista en una plataforma, el agente debe pas
 
 ### iOS
 
-Desde la raíz del monorepo (ajusta scheme/destino si hace falta):
+Desde la raíz del monorepo:
 
 ```bash
-xcodebuild test \
-  -project ios/Leafly/Leafly.xcodeproj \
-  -scheme Leafly \
-  -destination 'platform=iOS Simulator,name=iPhone 16'
+make sensor-ios
 ```
 
-Mínimo aceptable si los tests no se pueden lanzar en ese entorno: `xcodebuild build` con el mismo project/scheme en verde, y dejar constancia en `progress/current.md`.
+El simulador, el proyecto y el scheme se definen **solo** en el `Makefile` (variable `DEST`). No los copies a otros archivos ni a comandos de este documento. Comprueba que el simulador existe con `make check-sim`.
+
+Un `xcodebuild build` en verde **no** es un sensor válido. Si los tests no se pueden ejecutar en este entorno, la feature **no está verificada en iOS** (ejecútalos en un Mac o en el CI). El sensor también falla si se ejecutan 0 tests.
 
 ### Android
 
@@ -133,14 +132,16 @@ Si en esta sesión el agente se desvía de la spec, del design system o del DoD:
 
 No cerrar la sesión solo con el fix de código si el fallo revela un agujero del harness.
 
-## Loop (obligatorio en features 2.x)
+## Loop (protocolo de sesión + sensores ejecutables)
 
-1. Implementar el cambio mínimo que exige la spec.
-2. Ejecutar el sensor de la plataforma actual.
-3. Si falla: corregir y volver al paso 2. No reportar "listo en esta plataforma" con el sensor en rojo.
-4. Tras ambas plataformas en verde: checklist dual breve de comportamiento.
-5. `./scripts/verify-feature.sh <feature-id>` → solo entonces `status: done`.
-6. Si hay desvío claro de la spec o del design system: corregir y registrar en `progress/flywheel-log.md`.
+El *loop* es un protocolo de trabajo asistido por agente apoyado en sensores y puertas ejecutables (no un bucle autónomo sin supervisión):
+
+1. Implementar el cambio mínimo que exige la spec en la plataforma activa (una sola plataforma por sesión).
+2. Ejecutar el sensor de esa plataforma (`make sensor-ios` o `make sensor-android`).
+3. Si falla: diagnosticar con el log/salida, corregir el código y volver al paso 2. **No** declarar "listo en esta plataforma" con el sensor en rojo.
+4. Cuando ambas plataformas tengan su sensor en verde: revisar el *checklist* dual de comportamiento (decisión humana).
+5. Ejecutar `./scripts/verify-feature.sh <feature-id>` (o `make gate FEATURE=<id>`) y marcar `status: done` en `feature_list.json` solo si el *gate* pasa.
+6. Si hubo desvío claro de la spec, del *design system* o del *DoD*: corregir y registrar en `progress/flywheel-log.md`.
 
 ## Feature workflow (graph)
 

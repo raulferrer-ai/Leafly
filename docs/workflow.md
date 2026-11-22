@@ -28,7 +28,7 @@ Related: `AGENTS.md` (rules, sensors, loop, DoD), `scripts/verify-feature.sh` (g
                            │
               ┌────────────▼────────────┐
               │      sensor iOS         │
-              │  (xcodebuild test/build)│
+              │     (xcodebuild test)   │
               └────────────┬────────────┘
                      pass│ │fail
                          │ └──► back to implement iOS
@@ -78,7 +78,7 @@ One platform per agent session. Do not implement iOS and Android in the same ses
 | **spec** | Gherkin (or agreed format) describes behaviour | Spec exists and is referenced from `feature_list.json` |
 | **in_progress** | Exactly one active product feature | `status: in_progress` for that id only |
 | **implement iOS** | Minimal change to satisfy the spec on iOS | Code compiles; ready to measure |
-| **sensor iOS** | Feedback command for iOS | Test (preferred) or documented green build |
+| **sensor iOS** | `make sensor-ios` (`xcodebuild test`; 0 tests counts as failure) | Tests green. A green `build` alone is NOT accepted |
 | **implement Android** | Same for Android | Code compiles; ready to measure |
 | **sensor Android** | `./gradlew :app:testDebugUnitTest` (JDK 17+) | Tests green |
 | **dual checklist** | Human compares behaviour and tone on both apps | Checklist accepted |
@@ -143,22 +143,20 @@ Executable automation of every node (workflow engine) is optional. Following thi
 # Android sensor (JDK 17+)
 cd android && ./gradlew :app:testDebugUnitTest
 
-# iOS sensor (adjust simulator)
-xcodebuild test \
-  -project ios/Leafly/Leafly.xcodeproj \
-  -scheme Leafly \
-  -destination 'platform=iOS Simulator,name=iPhone 16'
+# iOS sensor (simulator comes from DEST in the Makefile: single source)
+make sensor-ios
 ```
 
 ### Make targets (executable graph)
 
 ```bash
 make init
+make check-sim
 make sensor-ios
 make sensor-android
 make gate
 make gate FEATURE=<id>
-make verify FEATURE=<id>
+make verify FEATURE=<id>   # alias of gate (the gate already runs both sensors)
 
 Human suspend points (dual checklist, merge, tag) are not Make targets on purpose.
 ```

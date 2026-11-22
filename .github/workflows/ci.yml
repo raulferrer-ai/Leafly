@@ -1,9 +1,8 @@
-
 name: CI
 
 on:
   push:
-    branches: [main, "harness-*"]
+    branches: [main]
   pull_request:
     branches: [main]
 
@@ -20,19 +19,27 @@ jobs:
 
       - name: Make scripts executable
         run: |
-          chmod +x init.sh
-          chmod +x scripts/verify-feature.sh
+          chmod +x init.sh scripts/verify-feature.sh scripts/selftest-gate.sh
 
       - name: Run init.sh
         run: ./init.sh
 
+      - name: Validate board and specs
+        run: ./scripts/verify-feature.sh --check-board
+
+      - name: Run gate selftest
+        run: ./scripts/selftest-gate.sh
+
+      - name: No IDE or user files tracked in git
+        run: |
+          if git ls-files | grep -E '(^|/)(xcuserdata|\.idea)(/|$)|\.xcuserstate$|(^|/)\.DS_Store$|(^|/)local\.properties$'; then
+            echo "Found IDE or user-specific files tracked in git" >&2
+            exit 1
+          fi
+
   android:
     name: Android unit tests
     runs-on: ubuntu-latest
-
-    defaults:
-      run:
-        working-directory: android
 
     steps:
       - uses: actions/checkout@v4
@@ -46,11 +53,13 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Run unit tests
-        run: ./gradlew :app:testDebugUnitTest --stacktrace
+      - name: Run Android sensor
+        run: |
+          chmod +x scripts/verify-feature.sh
+          make sensor-android
 
   ios:
-    name: iOS build
+    name: iOS tests
     runs-on: macos-26
 
     steps:
@@ -59,15 +68,19 @@ jobs:
       - name: Show Xcode version
         run: xcodebuild -version
 
-      - name: List available simulators
-        run: xcrun simctl list devices available
+      - name: Verify simulator from Makefile exists
+        run: make check-sim
 
-      - name: Build iOS
-        working-directory: ios/Leafly
+      - name: Run iOS sensor
         run: |
-          xcodebuild build \
-            -project Leafly.xcodeproj \
-            -scheme Leafly \
-            -destination 'generic/platform=iOS Simulator' \
-            CODE_SIGNING_ALLOWED=NO \
-            -quiet
+          chmod +x scripts/verify-feature.sh
+          make sensor-ios
+
+  gate:
+    name: Gate
+    runs-on: ubuntu-latest
+    needs: [harness, android, ios]
+
+    steps:
+      - uses: actions/checkout@v4
+      - run: echo "All required checks (harness, android, ios) passed."

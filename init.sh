@@ -144,18 +144,31 @@ else
 fi
 
 # --------------------------------------------
-# 6. Análisis de feature_list.json
+# 6. Validación y análisis de feature_list.json
 # --------------------------------------------
 echo ""
 echo "Estado de las features..."
 
+ALL_DONE=0
+
 if command -v python3 &> /dev/null; then
-  python3 - << 'EOF'
+  if [ -f "scripts/verify-feature.sh" ]; then
+    chmod +x scripts/verify-feature.sh 2>/dev/null || true
+    if ./scripts/verify-feature.sh --check-board >/dev/null 2>&1; then
+      success "Tablero feature_list.json y specs validados con verify-feature.sh --check-board"
+    else
+      error "Validación de feature_list.json o specs fallida:"
+      ./scripts/verify-feature.sh --check-board || true
+      exit 1
+    fi
+  fi
+
+  if python3 - << 'EOF'
 import json
 import sys
 
 try:
-    with open("feature_list.json", "r") as f:
+    with open("feature_list.json", "r", encoding="utf-8") as f:
         features = json.load(f)
 
     pending = [f for f in features if f.get("status") == "pending"]
@@ -170,18 +183,33 @@ try:
     if in_progress:
         f = in_progress[0]
         print(f"  Feature en curso: {f['id']} — {f['title']}")
+        sys.exit(10)
     elif pending:
-        # Ordenar por priority
         pending_sorted = sorted(pending, key=lambda x: x.get("priority", 999))
         f = pending_sorted[0]
         print(f"  Siguiente feature recomendada: {f['id']} — {f['title']}")
         print(f"  Spec: {f.get('spec', 'N/A')}")
+        sys.exit(11)
     else:
         print("  Todas las features están completadas.")
+        sys.exit(12)
 
+except SystemExit:
+    raise
 except Exception as e:
-    print(f"  ! No se pudo analizar feature_list.json: {e}")
+    print(f"  ! No se pudo analizar feature_list.json: {e}", file=sys.stderr)
+    sys.exit(1)
 EOF
+  then
+    :
+  else
+    rc=$?
+    case "$rc" in
+      10|11) ALL_DONE=0 ;;
+      12) ALL_DONE=1 ;;
+      *) exit "$rc" ;;
+    esac
+  fi
 else
   warning "python3 no está disponible → se omite el análisis de features"
 fi
@@ -194,9 +222,16 @@ echo "============================================"
 echo -e "${GREEN}Harness listo.${NC}"
 echo "============================================"
 echo ""
-echo "Próximos pasos recomendados:"
-echo "  1. Lee progress/current.md"
-echo "  2. Revisa la siguiente feature pendiente (arriba)"
-echo "  3. Lee la spec correspondiente en features/"
-echo "  4. Empieza a implementar (recomendado: primero iOS)"
+if [ "$ALL_DONE" -eq 1 ]; then
+  echo "Todas las features del tablero están en estado 'done':"
+  echo "  1. Revisa progress/current.md y progress/flywheel-log.md"
+  echo "  2. Si vas a añadir una nueva feature, crea su spec, añádela a feature_list.json y márcala in_progress"
+  echo "  3. Ejecuta ./scripts/verify-feature.sh <feature-id> si quieres revalidar una feature concreta"
+else
+  echo "Próximos pasos recomendados:"
+  echo "  1. Lee progress/current.md"
+  echo "  2. Revisa la feature activa o pendiente (arriba)"
+  echo "  3. Lee la spec correspondiente en features/"
+  echo "  4. Empieza a implementar (recomendado: primero iOS)"
+fi
 echo ""
