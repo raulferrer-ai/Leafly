@@ -266,12 +266,13 @@ run_ios() {
   local log="$LOG_DIR/ios-test.log"
   local bundle="$LOG_DIR/ios.xcresult"
 
-  info "Ejecutando tests iOS en: $dest (puede tardar)..."
+info "Ejecutando tests iOS en: $dest (puede tardar)..."
   if ! xcodebuild test \
       -project "$project" \
       -scheme "$scheme" \
       -destination "$dest" \
       -resultBundlePath "$bundle" \
+      -parallel-testing-enabled NO \
       CODE_SIGNING_ALLOWED=NO \
       -quiet >"$log" 2>&1; then
     error "iOS: los tests fallaron o no pudieron ejecutarse (un build correcto NO basta). Últimas líneas:"
